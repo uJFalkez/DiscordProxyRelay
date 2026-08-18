@@ -81,6 +81,7 @@ public sealed class ProxyCatalogTests
               {"ip":"10.0.0.2","port":1001,"protocol":"socks5","alive":true,"ssl":true,"uptime":98,"average_timeout":100,"timeout":40,"ip_data":{"countryCode":"US"}},
               {"ip":"10.0.0.3","port":2002,"protocol":"http","alive":true,"ssl":true,"uptime":99,"average_timeout":300,"timeout":90,"ip_data":{"countryCode":"DE"}},
               {"ip":"10.0.0.4","port":1002,"protocol":"socks5","alive":true,"ssl":true,"uptime":99,"average_timeout":300,"timeout":90,"ip_data":{"countryCode":"DE"}},
+              {"ip":"10.0.0.9","port":1005,"protocol":"socks5","alive":true,"ssl":true,"uptime":99,"average_timeout":200,"timeout":90,"ip_data":{"countryCode":"US"}},
               {"ip":"10.0.0.5","port":2003,"protocol":"http","alive":true,"ssl":true,"uptime":99,"average_timeout":200,"timeout":80,"ip_data":{"countryCode":"CA"}},
               {"ip":"10.0.0.6","port":1003,"protocol":"socks5","alive":true,"ssl":true,"uptime":99,"average_timeout":200,"timeout":80,"ip_data":{"countryCode":"CA"}},
               {"ip":"10.0.0.7","port":2004,"protocol":"http","alive":true,"ssl":true,"uptime":99,"average_timeout":200,"timeout":70,"ip_data":{"countryCode":"FR"}},
@@ -91,7 +92,7 @@ public sealed class ProxyCatalogTests
         var proxies = ProxyCatalog.Parse(json);
 
         Assert.Equal(
-            new[] { 1003, 1001, 2003, 2001, 1004, 1002, 2004, 2002 },
+            new[] { 1003, 1005, 1001, 2003, 2001, 1004, 1002, 2004, 2002 },
             proxies.Select(proxy => proxy.Port));
     }
 
