@@ -1,0 +1,36 @@
+# .NET build output
+**/bin/
+**/obj/
+artifacts/
+
+# IDE and editor files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local logs and captures
+*.log
+*.jsonl
+*.har
+*.pcap
+test_logs/
+
+# Local configuration and signing material
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Internal planning files
+docs/superpowers/
+
+# OS files
+.DS_Store
+Thumbs.db
