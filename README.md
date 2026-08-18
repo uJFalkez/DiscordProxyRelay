@@ -94,15 +94,6 @@ Para manter o console aberto e exibir também os logs do Discord, execute pelo P
 
 Sem `--verbose`, os logs internos do Discord são descartados após a leitura. As mensagens do launcher continuam visíveis durante a inicialização.
 
-## Compatibilidade
-
-| Sistema operacional | Windows x64 |
-| Cliente | Discord Stable |
-| Discord PTB e Canary | Não |
-| Discord no navegador | Não |
-| Runtime adicional | Não é necessário |
-| Instalação no sistema | Não é necessária |
-
 ## Como funciona
 
 1. Consulta a API pública da [ProxyScrape](https://proxyscrape.com/).
@@ -156,7 +147,7 @@ artifacts/proxy-relay/win-x64/DiscordProxyRelay.exe
 artifacts/proxy-relay/win-x64/SHA256SUMS.txt
 ```
 
-O executável é self-contained; o computador de destino não precisa instalar o .NET Runtime. Cada Release também inclui os avisos de licença dos componentes do .NET redistribuídos no executável.
+O executável é self-contained; o computador de destino não precisa instalar o .NET Runtime.
 
 ## Aviso legal
 
