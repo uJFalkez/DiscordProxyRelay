@@ -47,7 +47,7 @@ O resultado deve ser `True`. Se aparecer `False`, apague o executável e faça o
 
 ### 3. Feche o Discord
 
-Feche completamente o Discord antes de iniciar o launcher. Se o ícone ainda aparecer na bandeja do sistema, clique nele com o botão direito e selecione **Sair do Discord**.
+Feche completamente o Discord antes de iniciar o launcher usando Alt+F4. Se o ícone ainda aparecer no system tray, clique nele com o botão direito e selecione **Sair do Discord**.
 
 ### 4. Execute o launcher
 
@@ -96,8 +96,6 @@ Sem `--verbose`, os logs internos do Discord são descartados após a leitura. A
 
 ## Compatibilidade
 
-| Item | Suporte |
-| --- | --- |
 | Sistema operacional | Windows x64 |
 | Cliente | Discord Stable |
 | Discord PTB e Canary | Não |
