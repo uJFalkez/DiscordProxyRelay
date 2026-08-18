@@ -33,7 +33,7 @@ Discord PTB, Canary, navegador, macOS e Linux não são compatíveis.
 
 Não baixe o executável de sites, encurtadores ou repositórios não oficiais.
 
-### 2. Verifique o arquivo, se desejar
+### 2. Verifique o arquivo (OPCIONAL)
 
 Abra o PowerShell na pasta em que os arquivos foram salvos e execute:
 
