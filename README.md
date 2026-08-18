@@ -11,6 +11,7 @@ O DiscordProxyRelay usa o proxy apenas durante a inicialização. Depois que o g
 
 > [!IMPORTANT]
 > O projeto utiliza proxies públicos de terceiros. Leia a seção [Privacidade e riscos](#privacidade-e-riscos) antes de usar.
+> O Relay é necessário para TODOS que querem tanto assistir quanto streamar, não basta só o streamer ter instalado!!
 
 ## Instalação
 
