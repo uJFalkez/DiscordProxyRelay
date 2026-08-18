@@ -19,9 +19,7 @@ O DiscordProxyRelay é portátil: não possui instalador e não exige a instala�
 ### Requisitos
 
 - Windows x64;
-- Discord Stable instalado no perfil do usuário;
-- acesso à internet;
-- nenhuma outra instância do DiscordProxyRelay em execução.
+- Discord (stable release);
 
 Discord PTB, Canary, navegador, macOS e Linux não são compatíveis.
 
