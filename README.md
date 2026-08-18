@@ -84,7 +84,7 @@ Se a inicialização falhar, feche completamente o Discord e execute o launcher 
 ## Como funciona
 
 O Discord é iniciado temporariamente por um proxy público localizado fora do Brasil, sem modificar arquivos do cliente, injetar código ou instalar serviços no Windows.
-Depois que o gateway do Discord é identificado, novas conexões passam a usar a internet diretamente. Conexões de voz e vídeo destinadas a `discord.media` nem tocam o proxy.
+Depois que o gateway do Discord é identificado, novas conexões passam a usar rede brasileira diretamente. Conexões de voz e vídeo destinadas a `discord.media` nem tocam o proxy.
 
 ### Verbose
 
