@@ -1,133 +1,163 @@
 # DiscordProxyRelay
 
-Launcher para Windows x64 que inicia o Discord Stable usando temporariamente
-um proxy publico fora do Brasil. Depois que o gateway do Discord e observado,
-o relay troca novas conexoes para a internet direta. Conexoes destinadas a
-`discord.media` usam a rota direta desde o inicio.
+[![Última versão](https://img.shields.io/github/v/release/uJFalkez/DiscordProxyRelay?display_name=tag&style=flat-square)](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest)
+[![Plataforma](https://img.shields.io/badge/plataforma-Windows%20x64-0078D4?style=flat-square&logo=windows)](#compatibilidade)
+[![.NET](https://img.shields.io/badge/.NET-9.0.19-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![Licença](https://img.shields.io/github/license/uJFalkez/DiscordProxyRelay?style=flat-square)](LICENSE)
 
-O programa nao modifica arquivos do Discord, nao injeta codigo no cliente e nao
-instala servicos no Windows.
+Inicie o Discord Stable temporariamente por um proxy público localizado fora do Brasil, sem modificar arquivos do cliente, injetar código ou instalar serviços no Windows.
 
-## Download
+O DiscordProxyRelay usa o proxy apenas durante a inicialização. Depois que o gateway do Discord é identificado, novas conexões passam a usar a internet diretamente. Conexões de voz e vídeo destinadas a `discord.media` usam a rota direta desde o início.
 
-Baixe `DiscordProxyRelay.exe` pela pagina de
-[Releases](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest).
+> [!IMPORTANT]
+> O projeto utiliza proxies públicos de terceiros. Leia a seção [Privacidade e riscos](#privacidade-e-riscos) antes de usar.
 
-O programa suporta somente:
+## Instalação
+
+O DiscordProxyRelay é portátil: não possui instalador e não exige a instalação separada do .NET Runtime.
+
+### Requisitos
 
 - Windows x64;
-- Discord Stable instalado no perfil do usuario;
-- uma unica instancia do launcher por vez.
+- Discord Stable instalado no perfil do usuário;
+- acesso à internet;
+- nenhuma outra instância do DiscordProxyRelay em execução.
+
+Discord PTB, Canary, navegador, macOS e Linux não são compatíveis.
+
+### 1. Baixe o programa
+
+1. Acesse a página da [versão mais recente](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest).
+2. Expanda a seção **Assets**, caso ela esteja recolhida.
+3. Baixe o arquivo `DiscordProxyRelay.exe`.
+4. Para verificar a integridade do download, baixe também o arquivo `SHA256SUMS.txt`.
+5. Coloque os dois arquivos na mesma pasta. Você pode usar qualquer pasta comum, como `Downloads` ou `Documentos`.
+
+Não baixe o executável de sites, encurtadores ou repositórios não oficiais.
+
+### 2. Verifique o arquivo, se desejar
+
+Abra o PowerShell na pasta em que os arquivos foram salvos e execute:
+
+```powershell
+$expected = (Get-Content .\SHA256SUMS.txt).Split()[0]
+$actual = (Get-FileHash .\DiscordProxyRelay.exe -Algorithm SHA256).Hash.ToLower()
+$actual -eq $expected
+```
+
+O resultado deve ser `True`. Se aparecer `False`, apague o executável e faça o download novamente pela página oficial de Releases.
+
+### 3. Feche o Discord
+
+Feche completamente o Discord antes de iniciar o launcher. Se o ícone ainda aparecer na bandeja do sistema, clique nele com o botão direito e selecione **Sair do Discord**.
+
+### 4. Execute o launcher
+
+Abra `DiscordProxyRelay.exe` e aguarde. O programa irá:
+
+1. buscar proxies disponíveis;
+2. testar os proxies encontrados;
+3. selecionar uma conexão válida;
+4. abrir o Discord automaticamente;
+5. ocultar o console depois que a conexão inicial estiver concluída.
+
+O processo pode demorar enquanto os proxies públicos são testados. Não abra o Discord manualmente durante essa etapa.
+
+### Aviso do Windows SmartScreen
+
+O executável não possui assinatura digital. Por isso, o Windows SmartScreen pode exibir a mensagem **O Windows protegeu o computador** na primeira execução.
+
+Se você baixou o arquivo pela página oficial de Releases e conferiu o checksum:
+
+1. clique em **Mais informações**;
+2. confirme que o aplicativo exibido é `DiscordProxyRelay.exe`;
+3. clique em **Executar assim mesmo**.
+
+Esse aviso não significa que seja necessário desativar o Microsoft Defender. Não crie exclusões permanentes para o programa.
 
 ## Como usar
 
-1. Feche completamente o Discord, inclusive o icone na bandeja.
-2. Execute `DiscordProxyRelay.exe`.
-3. Aguarde a busca e validacao de um proxy.
-4. O launcher abre o Discord automaticamente.
-5. Depois da conexao, o console e ocultado e o restante da sessao segue direto.
+Na utilização normal, basta fechar o Discord e executar `DiscordProxyRelay.exe`. O console mostra o andamento da conexão e os proxies testados, mas nenhum log é salvo em arquivo.
 
-Para manter o console aberto e exibir tambem os logs do Discord:
+Se a inicialização falhar, feche completamente o Discord e execute o launcher novamente. Uma nova tentativa poderá selecionar outro proxy.
 
-```powershell
-DiscordProxyRelay.exe --verbose
-```
+### Modo detalhado
 
-Sem `--verbose`, os logs internos do Discord sao descartados. As mensagens do
-launcher e os proxies publicos testados continuam aparecendo no console. Nenhum
-log e salvo em arquivo.
-
-## Aviso do Windows SmartScreen
-
-O DiscordProxyRelay nao possui assinatura digital, entao o Windows pode exibir
-um aviso ao executa-lo. Isso e esperado: o programa funciona normalmente, nao
-coleta dados pessoais e e open source. Voce pode ler o codigo ou compilar o
-executavel por conta propria.
-
-Se baixou pela pagina oficial de Releases, clique em **Mais informacoes** e
-depois em **Executar assim mesmo**.
-
-Cada Release inclui `SHA256SUMS.txt`. Para verificar o arquivo baixado:
+Para manter o console aberto e exibir também os logs do Discord, execute pelo PowerShell:
 
 ```powershell
-Get-FileHash .\DiscordProxyRelay.exe -Algorithm SHA256
+.\DiscordProxyRelay.exe --verbose
 ```
 
-Compare o resultado com o hash publicado na mesma Release. Nao desative o
-Microsoft Defender e nao adicione exclusoes permanentes.
+Sem `--verbose`, os logs internos do Discord são descartados após a leitura. As mensagens do launcher continuam visíveis durante a inicialização.
+
+## Compatibilidade
+
+| Item | Suporte |
+| --- | --- |
+| Sistema operacional | Windows x64 |
+| Cliente | Discord Stable |
+| Discord PTB e Canary | Não |
+| Discord no navegador | Não |
+| Runtime adicional | Não é necessário |
+| Instalação no sistema | Não é necessária |
 
 ## Como funciona
 
-1. Consulta a API publica da [ProxyScrape](https://proxyscrape.com/).
-2. Descarta proxies brasileiros, inativos, sem suporte TLS ou com metricas
-   invalidas.
-3. Ordena por disponibilidade e latencia.
-4. Testa ate 12 proxies SOCKS5; se nenhum funcionar, testa ate 12 HTTP CONNECT.
-5. Exige um tunel com certificado TLS valido para `gateway.discord.gg`.
-6. Sobe um relay HTTP CONNECT somente em `127.0.0.1` e inicia o Discord com esse
-   relay como proxy.
-7. `discord.media` e seus subdominios ignoram o proxy, inclusive nas portas RTC
-   alternativas.
-8. Dez segundos depois de observar o gateway, fecha os tuneis de bootstrap e
-   passa novas conexoes para a rota direta.
+1. Consulta a API pública da [ProxyScrape](https://proxyscrape.com/).
+2. Descarta proxies brasileiros, inativos, sem suporte a TLS ou com métricas inválidas.
+3. Ordena os resultados por disponibilidade e latência.
+4. Testa até 12 proxies SOCKS5. Se nenhum funcionar, testa até 12 proxies HTTP CONNECT.
+5. Exige um túnel com certificado TLS válido para `gateway.discord.gg`.
+6. Inicia um relay HTTP CONNECT somente em `127.0.0.1` e abre o Discord por esse relay.
+7. Faz com que `discord.media` e seus subdomínios ignorem o proxy, inclusive em portas RTC alternativas.
+8. Dez segundos depois de identificar o gateway, encerra os túneis de inicialização e direciona novas conexões para a rota direta.
 
-O relay nao descriptografa TLS, nao instala certificados e nao le o conteudo das
-conexoes do Discord.
+O relay não descriptografa TLS, não instala certificados e não lê o conteúdo das conexões do Discord.
 
 ## Privacidade e riscos
 
-- O programa nao le nem salva tokens, mensagens, contas, cookies ou payloads do
-  Discord.
-- O endereco de cada proxy testado e exibido no console, mas nao e salvo.
-- A consulta ao catalogo da ProxyScrape envia a essa API seu IP publico e os
-  metadados normais de uma requisicao HTTPS.
-- Um proxy publico ve seu IP de origem, os destinos acessados, horarios e volume
-  de trafego. O conteudo HTTPS/WSS permanece protegido por TLS.
-- Proxies publicos podem ficar lentos, desaparecer, rejeitar destinos ou causar
-  verificacoes adicionais do Discord.
-- Se a inicializacao falhar, feche o Discord e tente novamente para selecionar
-  outro proxy.
+- O programa não lê nem salva tokens, mensagens, contas, cookies ou conteúdo enviado pelo Discord.
+- O endereço de cada proxy testado aparece no console, mas não é salvo.
+- A consulta ao catálogo da ProxyScrape envia à API o seu endereço IP público e os metadados normais de uma requisição HTTPS.
+- Um proxy público pode identificar seu IP de origem, os destinos acessados, os horários e o volume de tráfego. O conteúdo HTTPS e WSS permanece protegido por TLS.
+- Proxies públicos podem ficar lentos, desaparecer, rejeitar destinos ou provocar verificações adicionais do Discord.
+- Não compartilhe capturas do console sem revisar os endereços de proxy exibidos.
 
-## Limitacoes
+## Limitações
 
-- PTB, Canary, macOS, Linux e Discord no navegador nao sao suportados.
-- A disponibilidade de recursos depende do comportamento atual do Discord e
-  pode mudar sem aviso.
-- Se o gateway reconectar pela rota direta, pode ser necessario reiniciar o
-  launcher.
-- Nao ha garantia de que toda conta, servidor ou sessao tera os mesmos recursos.
+- A disponibilidade de recursos depende do comportamento atual do Discord e pode mudar sem aviso.
+- Se o gateway se reconectar pela rota direta, pode ser necessário fechar o Discord e executar o launcher novamente.
+- Não há garantia de que todas as contas, servidores ou sessões terão os mesmos recursos.
+- O funcionamento final deve ser avaliado pelo próprio usuário, especialmente após atualizações do Discord.
 
-## Build
+## Compilação
 
-Requisitos:
+### Requisitos
 
-- SDK do .NET 9 compativel com o runtime `9.0.19`;
+- SDK do .NET 9 compatível com o runtime `9.0.19`;
 - Bash;
-- acesso ao NuGet durante a restauracao inicial.
+- acesso ao NuGet durante a restauração inicial.
 
-Execute:
+Na raiz do repositório, execute:
 
 ```bash
 ./scripts/build-proxy-relay.sh
 ```
 
-O script roda os testes e publica:
+O script executa os testes e gera:
 
 ```text
 artifacts/proxy-relay/win-x64/DiscordProxyRelay.exe
 artifacts/proxy-relay/win-x64/SHA256SUMS.txt
 ```
 
-O executavel e self-contained; o computador de destino nao precisa instalar o
-.NET Runtime. A Release tambem inclui os avisos de licenca dos componentes do
-.NET redistribuidos no executavel.
+O executável é self-contained; o computador de destino não precisa instalar o .NET Runtime. Cada Release também inclui os avisos de licença dos componentes do .NET redistribuídos no executável.
 
 ## Aviso legal
 
-Este e um projeto independente, sem afiliacao com Discord ou ProxyScrape. O uso
-de proxies e o contorno de restricoes regionais podem contrariar os Termos de
-Servico do Discord. Use por sua conta e risco.
+Este é um projeto independente, sem afiliação com o Discord ou a ProxyScrape. O uso de proxies e o contorno de restrições regionais podem contrariar os Termos de Serviço do Discord. Use por sua conta e risco.
 
-## Licenca
+## Licença
 
-[MIT](LICENSE)
+Distribuído sob a [licença MIT](LICENSE).
