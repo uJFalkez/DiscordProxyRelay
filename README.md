@@ -30,7 +30,7 @@ Discord PTB, Canary, navegador, macOS e Linux não são compatíveis.
 1. Acesse a página da [versão mais recente](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest).
 2. Expanda a seção **Assets**, caso ela esteja recolhida.
 3. Baixe o arquivo `DiscordProxyRelay.exe`.
-4. Para verificar a integridade do download, baixe também o arquivo `SHA256SUMS.txt`.
+4. Para verificar a integridade do download, baixe também o arquivo `SHA256SUMS.txt` (OPCIONAL).
 5. Coloque os dois arquivos na mesma pasta. Você pode usar qualquer pasta comum, como `Downloads` ou `Documentos`.
 
 Não baixe o executável de sites, encurtadores ou repositórios não oficiais.
