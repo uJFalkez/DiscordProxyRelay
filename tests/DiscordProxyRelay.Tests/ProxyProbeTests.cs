@@ -104,6 +104,19 @@ public sealed class ProxyProbeTests
     }
 
     [Fact]
+    public async Task ProbeRejectsUnapprovedCandidateWithoutAttemptingIt()
+    {
+        var endpoint = new ProxyEndpoint("proxy.test", 1001, ProxyKind.Socks5, "KZ");
+        var connector = new ProbeConnector();
+        var probe = new ProxyProbe(connector, (_, _, _) => Task.CompletedTask);
+
+        var selected = await probe.FindUsableAsync([endpoint], CancellationToken.None);
+
+        Assert.Null(selected);
+        Assert.Empty(connector.Attempts);
+    }
+
+    [Fact]
     public async Task ProbeAttemptsCountryAndProtocolStagesSequentially()
     {
         var endpoints = new[]
