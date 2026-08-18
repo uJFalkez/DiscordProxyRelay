@@ -5,6 +5,8 @@
 [![.NET](https://img.shields.io/badge/.NET-9.0.19-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Licença](https://img.shields.io/github/license/uJFalkez/DiscordProxyRelay?style=flat-square)](LICENSE)
 
+Qualquer dúvida, me chame no meu discord: `falkezz#5262`
+
 > [!IMPORTANT]
 > O projeto utiliza proxies públicos de terceiros. Leia a seção [Privacidade e riscos](#privacidade-e-riscos) antes de usar.
 >
