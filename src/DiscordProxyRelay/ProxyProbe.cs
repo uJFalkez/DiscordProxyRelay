@@ -154,13 +154,30 @@ public sealed class ProxyProbe
         CancellationToken cancellationToken,
         Action<ProxyEndpoint>? onAttempt = null)
     {
-        var selected = await ProbeGroupAsync(candidates.Where(candidate => candidate.Kind == ProxyKind.Socks5).Take(12));
-        if (selected is not null)
+        var groups = new[]
         {
-            return selected;
+            Stage(ProxyKind.Socks5, preferred: true),
+            Stage(ProxyKind.Http, preferred: true),
+            Stage(ProxyKind.Socks5, preferred: false),
+            Stage(ProxyKind.Http, preferred: false),
+        };
+
+        foreach (var group in groups)
+        {
+            var selected = await ProbeGroupAsync(group);
+            if (selected is not null)
+            {
+                return selected;
+            }
         }
 
-        return await ProbeGroupAsync(candidates.Where(candidate => candidate.Kind == ProxyKind.Http).Take(12));
+        return null;
+
+        IEnumerable<ProxyEndpoint> Stage(ProxyKind kind, bool preferred) => candidates
+            .Where(candidate => candidate.Kind == kind &&
+                ProxyCatalog.IsApprovedCountry(candidate.CountryCode) &&
+                ProxyCatalog.IsPreferredCountry(candidate.CountryCode) == preferred)
+            .Take(ProxyCatalog.MaximumCandidatesPerStage);
 
         async Task<ProxyEndpoint?> ProbeGroupAsync(IEnumerable<ProxyEndpoint> group)
         {

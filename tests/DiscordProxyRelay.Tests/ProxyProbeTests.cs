@@ -37,7 +37,7 @@ public sealed class ProxyProbeTests
         var selected = await probe.FindUsableAsync(endpoints, CancellationToken.None);
 
         Assert.Equal(5, selected?.Port);
-        Assert.InRange(connector.Attempts.Count, 1, 12);
+        Assert.InRange(connector.Attempts.Count, 1, ProxyCatalog.MaximumCandidatesPerStage);
         Assert.InRange(maximumActive, 1, 4);
     }
 
@@ -87,12 +87,57 @@ public sealed class ProxyProbeTests
     }
 
     [Fact]
+    public async Task ProbeDoesNotAttemptSecondarySocks5WhenPreferredHttpSucceeds()
+    {
+        var endpoints = new[]
+        {
+            new ProxyEndpoint("proxy.test", 1001, ProxyKind.Socks5, "GB"),
+            new ProxyEndpoint("proxy.test", 2001, ProxyKind.Http, "CA"),
+        };
+        var connector = new ProbeConnector();
+        var probe = new ProxyProbe(connector, (_, _, _) => Task.CompletedTask);
+
+        var selected = await probe.FindUsableAsync(endpoints, CancellationToken.None);
+
+        Assert.Equal(endpoints[1], selected);
+        Assert.DoesNotContain(connector.Attempts, endpoint => endpoint.CountryCode == "GB");
+    }
+
+    [Fact]
+    public async Task ProbeAttemptsCountryAndProtocolStagesSequentially()
+    {
+        var endpoints = new[]
+        {
+            new ProxyEndpoint("proxy.test", 4001, ProxyKind.Http, "DE"),
+            new ProxyEndpoint("proxy.test", 2001, ProxyKind.Http, "CA"),
+            new ProxyEndpoint("proxy.test", 3001, ProxyKind.Socks5, "GB"),
+            new ProxyEndpoint("proxy.test", 1001, ProxyKind.Socks5, "US"),
+        };
+        var attemptedStages = new ConcurrentQueue<string>();
+        var connector = new ProbeConnector(endpoint =>
+            attemptedStages.Enqueue($"{endpoint.CountryCode}-{endpoint.Kind}"));
+        var probe = new ProxyProbe(connector, (stream, _, _) =>
+        {
+            if (((TaggedStream)stream).Port != 4001) throw new IOException();
+            return Task.CompletedTask;
+        });
+
+        var selected = await probe.FindUsableAsync(endpoints, CancellationToken.None);
+
+        Assert.Equal(endpoints[0], selected);
+        Assert.Equal(
+            ["US-Socks5", "CA-Http", "GB-Socks5", "DE-Http"],
+            attemptedStages);
+    }
+
+    [Fact]
     public async Task ProbeAttemptsHttpOnlyAfterAllBoundedSocks5CandidatesFail()
     {
         var socksFailures = 0;
         var socksFailuresAtFirstHttpAttempt = -1;
-        var endpoints = Enumerable.Range(1, 13)
+        var endpoints = Enumerable.Range(1, 7)
             .Select(port => new ProxyEndpoint("proxy.test", port, ProxyKind.Socks5, "US"))
+            .Append(new ProxyEndpoint("proxy.test", 1001, ProxyKind.Socks5, "KZ"))
             .Append(new ProxyEndpoint("proxy.test", 2001, ProxyKind.Http, "US"))
             .ToArray();
         var connector = new ProbeConnector(endpoint =>
@@ -116,8 +161,9 @@ public sealed class ProxyProbeTests
         var selected = await probe.FindUsableAsync(endpoints, CancellationToken.None);
 
         Assert.Equal(endpoints[^1], selected);
-        Assert.Equal(12, socksFailuresAtFirstHttpAttempt);
-        Assert.DoesNotContain(connector.Attempts, endpoint => endpoint.Port == 13);
+        Assert.Equal(ProxyCatalog.MaximumCandidatesPerStage, socksFailuresAtFirstHttpAttempt);
+        Assert.DoesNotContain(connector.Attempts, endpoint => endpoint.Port == 7);
+        Assert.DoesNotContain(connector.Attempts, endpoint => endpoint.CountryCode == "KZ");
     }
 
     [Fact]
