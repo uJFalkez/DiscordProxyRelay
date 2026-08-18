@@ -5,13 +5,12 @@
 [![.NET](https://img.shields.io/badge/.NET-9.0.19-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Licença](https://img.shields.io/github/license/uJFalkez/DiscordProxyRelay?style=flat-square)](LICENSE)
 
-Inicie o Discord Stable temporariamente por um proxy público localizado fora do Brasil, sem modificar arquivos do cliente, injetar código ou instalar serviços no Windows.
-
-O DiscordProxyRelay usa o proxy apenas durante a inicialização. Depois que o gateway do Discord é identificado, novas conexões passam a usar a internet diretamente. Conexões de voz e vídeo destinadas a `discord.media` usam a rota direta desde o início.
-
 > [!IMPORTANT]
 > O projeto utiliza proxies públicos de terceiros. Leia a seção [Privacidade e riscos](#privacidade-e-riscos) antes de usar.
+>
 > O Relay é necessário para TODOS que querem tanto assistir quanto streamar, não basta só o streamer ter instalado!!
+>
+> O Windows SmartScreen não gosta muito de executáveis desconhecidos, portanto, só execute o programa se for baixado estritamente [desta página](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest). Se não confia mesmo assim, sinta-se livre para buildar o programa em sua máquina e verificar o checksum. Além disso tudo: é open-source, basta ler o código se quiser.
 
 ## Instalação
 
@@ -82,7 +81,12 @@ Na utilização normal, basta fechar o Discord e executar `DiscordProxyRelay.exe
 
 Se a inicialização falhar, feche completamente o Discord e execute o launcher novamente. Uma nova tentativa poderá selecionar outro proxy.
 
-### Modo detalhado
+## Como funciona
+
+O Discord é iniciado temporariamente por um proxy público localizado fora do Brasil, sem modificar arquivos do cliente, injetar código ou instalar serviços no Windows.
+Depois que o gateway do Discord é identificado, novas conexões passam a usar a internet diretamente. Conexões de voz e vídeo destinadas a `discord.media` nem tocam o proxy.
+
+### Verbose
 
 Para manter o console aberto e exibir também os logs do Discord, execute pelo PowerShell:
 
