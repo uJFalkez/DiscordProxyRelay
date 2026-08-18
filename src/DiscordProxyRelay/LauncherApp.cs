@@ -94,7 +94,7 @@ internal sealed class LauncherApp(LauncherDependencies dependencies, TextWriter 
 
         if (selected is null)
         {
-            output.WriteLine("Nenhum proxy público utilizável foi encontrado. O Discord não será iniciado.");
+            output.WriteLine("Nenhum proxy utilizável dos países aprovados foi encontrado. O Discord não será iniciado.");
             return 1;
         }
 

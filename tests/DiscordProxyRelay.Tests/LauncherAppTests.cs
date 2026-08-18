@@ -53,7 +53,7 @@ public sealed class LauncherAppTests
 
         Assert.Equal(1, exitCode);
         Assert.False(launched);
-        Assert.Contains("Nenhum proxy público utilizável foi encontrado.", output.ToString());
+        Assert.Contains("Nenhum proxy utilizável dos países aprovados foi encontrado. O Discord não será iniciado.", output.ToString());
         Assert.DoesNotContain("proxy.test", output.ToString());
     }
 

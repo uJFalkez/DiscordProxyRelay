@@ -79,9 +79,9 @@ Na utilização normal, basta fechar o Discord e executar `DiscordProxyRelay.exe
 
 Se a inicialização falhar, feche completamente o Discord e execute o launcher novamente. Uma nova tentativa poderá selecionar outro proxy.
 
-## Como funciona
+## Visão geral
 
-O Discord é iniciado temporariamente por um proxy público localizado fora do Brasil, sem modificar arquivos do cliente, injetar código ou instalar serviços no Windows.
+O Discord é iniciado temporariamente por um proxy público de um dos países aprovados, sem modificar arquivos do cliente, injetar código ou instalar serviços no Windows.
 Depois que o gateway do Discord é identificado, novas conexões passam a usar rede brasileira diretamente. Conexões de voz e vídeo destinadas a `discord.media` nem tocam o proxy.
 
 ### Verbose
@@ -106,15 +106,18 @@ Sem `--verbose`, os logs internos do Discord são descartados após a leitura. A
 ## Como funciona
 
 1. Consulta a API pública da [ProxyScrape](https://proxyscrape.com/).
-2. Descarta proxies brasileiros, inativos, sem suporte a TLS ou com métricas inválidas.
-3. Ordena os resultados por disponibilidade e latência.
-4. Testa até 12 proxies SOCKS5. Se nenhum funcionar, testa até 12 proxies HTTP CONNECT.
-5. Exige um túnel com certificado TLS válido para `gateway.discord.gg`.
-6. Inicia um relay HTTP CONNECT somente em `127.0.0.1` e abre o Discord por esse relay.
-7. Faz com que `discord.media` e seus subdomínios ignorem o proxy, inclusive em portas RTC alternativas.
-8. Dez segundos depois de identificar o gateway, encerra os túneis de inicialização e direciona novas conexões para a rota direta.
+2. Aceita somente proxies dos países preferenciais `US` e `CA` ou dos países secundários `GB`, `IE`, `DE`, `FR`, `NL`, `BE`, `LU`, `CH`, `AT`, `DK`, `NO`, `SE`, `FI`, `IS`, `AU`, `NZ`, `JP` e `SG`.
+3. Descarta proxies inativos, sem suporte a TLS ou com métricas inválidas.
+4. Ordena os resultados por disponibilidade e latência dentro de cada etapa.
+5. Testa os proxies em quatro etapas estritas: SOCKS5 preferenciais, HTTP CONNECT preferenciais, SOCKS5 secundários e HTTP CONNECT secundários. Cada etapa testa no máximo seis proxies, totalizando no máximo 24 tentativas, e a etapa seguinte só começa se nenhuma conexão da anterior funcionar.
+6. Não tenta proxies de países fora das listas aprovadas caso todas as quatro etapas falhem.
+7. Exige um túnel com certificado TLS válido para `gateway.discord.gg`.
+8. Inicia um relay HTTP CONNECT somente em `127.0.0.1` e abre o Discord por esse relay.
+9. Faz com que `discord.media` e seus subdomínios ignorem o proxy, inclusive em portas RTC alternativas.
+10. Dez segundos depois de identificar o gateway, encerra os túneis de inicialização e direciona novas conexões para a rota direta.
 
 O relay não descriptografa TLS, não instala certificados e não lê o conteúdo das conexões do Discord.
+A filtragem geográfica apenas limita os países usados e não torna proxies públicos confiáveis.
 
 ## Privacidade e riscos
 
