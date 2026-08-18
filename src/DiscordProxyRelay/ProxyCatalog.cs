@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
@@ -7,8 +6,23 @@ namespace DiscordProxyRelay;
 public static class ProxyCatalog
 {
     internal const int MaximumResponseBytes = 1024 * 1024;
+    internal const int MaximumCandidatesPerStage = 6;
     internal static readonly Uri ApiEndpoint = new("https://api.proxyscrape.com/v4/free-proxy-list/get?request=displayproxies&protocol=http,socks5&format=json&timeout=20000&limit=500");
-    private static readonly HashSet<string> KnownCountries = BuildKnownCountries();
+    private static readonly HashSet<string> PreferredCountries = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "US", "CA",
+    };
+    private static readonly HashSet<string> SecondaryCountries = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "GB", "IE", "DE", "FR", "NL", "BE", "LU", "CH", "AT", "DK", "NO", "SE", "FI", "IS",
+        "AU", "NZ", "JP", "SG",
+    };
+
+    internal static bool IsPreferredCountry(string countryCode) =>
+        PreferredCountries.Contains(countryCode);
+
+    internal static bool IsApprovedCountry(string countryCode) =>
+        IsPreferredCountry(countryCode) || SecondaryCountries.Contains(countryCode);
 
     public static async Task<IReadOnlyList<ProxyEndpoint>> FetchAsync(CancellationToken cancellationToken)
     {
@@ -107,7 +121,7 @@ public static class ProxyCatalog
                 }
 
                 countryCode = countryCode.ToUpperInvariant();
-                if (countryCode == "BR" || !KnownCountries.Contains(countryCode) ||
+                if (!IsApprovedCountry(countryCode) ||
                     Uri.CheckHostName(host) == UriHostNameType.Unknown ||
                     !unique.Add($"{kind}|{host}|{port}"))
                 {
@@ -121,18 +135,20 @@ public static class ProxyCatalog
                     timeout));
             }
 
-            var limit = Math.Min(maximumCandidates, 12);
-            return Rank(ProxyKind.Socks5)
-                .Concat(Rank(ProxyKind.Http))
+            return Rank(ProxyKind.Socks5, preferred: true)
+                .Concat(Rank(ProxyKind.Http, preferred: true))
+                .Concat(Rank(ProxyKind.Socks5, preferred: false))
+                .Concat(Rank(ProxyKind.Http, preferred: false))
                 .Select(proxy => proxy.Endpoint)
                 .ToArray();
 
-            IEnumerable<RankedProxy> Rank(ProxyKind kind) => parsed
-                .Where(proxy => proxy.Endpoint.Kind == kind)
+            IEnumerable<RankedProxy> Rank(ProxyKind kind, bool preferred) => parsed
+                .Where(proxy => proxy.Endpoint.Kind == kind &&
+                    IsPreferredCountry(proxy.Endpoint.CountryCode) == preferred)
                 .OrderByDescending(proxy => proxy.Uptime)
                 .ThenBy(proxy => proxy.AverageTimeout)
                 .ThenBy(proxy => proxy.Timeout)
-                .Take(limit);
+                .Take(Math.Min(maximumCandidates, MaximumCandidatesPerStage));
         }
         catch (JsonException)
         {
@@ -216,23 +232,6 @@ public static class ProxyCatalog
 
         value = 0;
         return false;
-    }
-
-    private static HashSet<string> BuildKnownCountries()
-    {
-        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
-        {
-            try
-            {
-                result.Add(new RegionInfo(culture.Name).TwoLetterISORegionName);
-            }
-            catch (ArgumentException)
-            {
-            }
-        }
-
-        return result;
     }
 
     private sealed record RankedProxy(

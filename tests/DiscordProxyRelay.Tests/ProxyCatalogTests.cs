@@ -48,7 +48,32 @@ public sealed class ProxyCatalogTests
     }
 
     [Fact]
-    public void ParseRanksEachProtocolByUptimeThenAverageAndCurrentTimeout()
+    public void ParseAcceptsOnlyApprovedCountriesAndNormalizesCodes()
+    {
+        const string json = """
+            {"proxies":[
+              {"ip":"10.0.1.1","port":3001,"protocol":"http","alive":true,"ssl":true,"uptime":99,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"us"}},
+              {"ip":"10.0.1.2","port":3002,"protocol":"http","alive":true,"ssl":true,"uptime":98,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"CA"}},
+              {"ip":"10.0.1.3","port":3003,"protocol":"http","alive":true,"ssl":true,"uptime":97,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"DE"}},
+              {"ip":"10.0.1.4","port":3004,"protocol":"http","alive":true,"ssl":true,"uptime":96,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"JP"}},
+              {"ip":"10.0.1.5","port":3005,"protocol":"http","alive":true,"ssl":true,"uptime":95,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"BR"}},
+              {"ip":"10.0.1.6","port":3006,"protocol":"http","alive":true,"ssl":true,"uptime":94,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"KZ"}},
+              {"ip":"10.0.1.7","port":3007,"protocol":"http","alive":true,"ssl":true,"uptime":93,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"CN"}},
+              {"ip":"10.0.1.8","port":3008,"protocol":"http","alive":true,"ssl":true,"uptime":92,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"RU"}},
+              {"ip":"10.0.1.9","port":3009,"protocol":"http","alive":true,"ssl":true,"uptime":91,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"ZZ"}},
+              {"ip":"10.0.1.10","port":3010,"protocol":"http","alive":true,"ssl":true,"uptime":90,"average_timeout":100,"timeout":70,"ip_data":{}},
+              {"ip":"10.0.1.11","port":3011,"protocol":"http","alive":true,"ssl":true,"uptime":89,"average_timeout":100,"timeout":70,"ip_data":{"countryCode":"   "}}
+            ]}
+            """;
+
+        var proxies = ProxyCatalog.Parse(json);
+
+        Assert.Equal(new[] { 3001, 3002, 3003, 3004 }, proxies.Select(proxy => proxy.Port));
+        Assert.Equal(new[] { "US", "CA", "DE", "JP" }, proxies.Select(proxy => proxy.CountryCode));
+    }
+
+    [Fact]
+    public void ParseRanksPreferredAndSecondaryStagesByQuality()
     {
         const string json = """
             {"proxies":[
@@ -66,27 +91,31 @@ public sealed class ProxyCatalogTests
         var proxies = ProxyCatalog.Parse(json);
 
         Assert.Equal(
-            new[] { 1004, 1003, 1002, 1001, 2004, 2003, 2002, 2001 },
+            new[] { 1003, 1001, 2003, 2001, 1004, 1002, 2004, 2002 },
             proxies.Select(proxy => proxy.Port));
     }
 
     [Fact]
-    public void ParseAppliesCandidateCapSeparatelyToEachProtocol()
+    public void ParseAppliesSixCandidateCapSeparatelyToEachStage()
     {
-        var entries = Enumerable.Range(1, 13)
+        var entries = Enumerable.Range(1, 7)
             .SelectMany(number => new[]
             {
                 $$$"""{"ip":"10.0.1.{{{number}}}","port":{{{1000 + number}}},"protocol":"socks5","alive":true,"ssl":true,"uptime":{{{100 - number}}},"average_timeout":100,"timeout":100,"ip_data":{"countryCode":"US"}}""",
-                $$$"""{"ip":"10.0.2.{{{number}}}","port":{{{2000 + number}}},"protocol":"http","alive":true,"ssl":true,"uptime":{{{100 - number}}},"average_timeout":100,"timeout":100,"ip_data":{"countryCode":"US"}}""",
+                $$$"""{"ip":"10.0.2.{{{number}}}","port":{{{2000 + number}}},"protocol":"http","alive":true,"ssl":true,"uptime":{{{100 - number}}},"average_timeout":100,"timeout":100,"ip_data":{"countryCode":"CA"}}""",
+                $$$"""{"ip":"10.0.3.{{{number}}}","port":{{{3000 + number}}},"protocol":"socks5","alive":true,"ssl":true,"uptime":{{{50 - number}}},"average_timeout":100,"timeout":100,"ip_data":{"countryCode":"DE"}}""",
+                $$$"""{"ip":"10.0.4.{{{number}}}","port":{{{4000 + number}}},"protocol":"http","alive":true,"ssl":true,"uptime":{{{50 - number}}},"average_timeout":100,"timeout":100,"ip_data":{"countryCode":"FR"}}""",
             });
         var json = $$$"""{"proxies":[{{{string.Join(',', entries)}}}]}""";
 
         var proxies = ProxyCatalog.Parse(json, 20);
 
         Assert.Equal(24, proxies.Count);
-        Assert.Equal(12, proxies.Count(proxy => proxy.Kind == ProxyKind.Socks5));
-        Assert.Equal(12, proxies.Count(proxy => proxy.Kind == ProxyKind.Http));
-        Assert.DoesNotContain(proxies, proxy => proxy.Port is 1013 or 2013);
+        Assert.Equal(6, proxies.Count(proxy => proxy.Kind == ProxyKind.Socks5 && proxy.CountryCode == "US"));
+        Assert.Equal(6, proxies.Count(proxy => proxy.Kind == ProxyKind.Http && proxy.CountryCode == "CA"));
+        Assert.Equal(6, proxies.Count(proxy => proxy.Kind == ProxyKind.Socks5 && proxy.CountryCode == "DE"));
+        Assert.Equal(6, proxies.Count(proxy => proxy.Kind == ProxyKind.Http && proxy.CountryCode == "FR"));
+        Assert.DoesNotContain(proxies, proxy => proxy.Port is 1007 or 2007 or 3007 or 4007);
     }
 
     [Fact]
