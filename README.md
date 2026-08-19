@@ -25,6 +25,8 @@ O DiscordProxyRelay é portátil: não possui instalador e não exige a instala�
 
 Discord PTB, Canary, navegador, macOS e Linux não são compatíveis.
 
+Vencord é nativamente compatível, mas plugins que interagem com a rede podem comprometer o programa.
+
 ### 1. Baixe o programa
 
 1. Acesse a página da [versão mais recente](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest).
@@ -123,7 +125,7 @@ A filtragem geográfica apenas limita os países usados e não torna proxies pú
 
 | Origem | Bug | Status | Correção |
 | --- | --- | --- | --- |
-| [@light1ngbolt no X](https://x.com/light1ngbolt/status/2089861213387665767) | A feature continua indisponível como se a inicialização tivesse ocorrido no Brasil. | Inconclusivo | Melhor correção encontrada até agora é formatar o computador kkkkkk |
+| [@light1ngbolt no X](https://x.com/light1ngbolt/status/2089861213387665767) | A feature continua indisponível como se a inicialização tivesse ocorrido no Brasil. | Inconclusivo | No caso específico: foi causado pelo plugin `BetterSessions` do Vencord. |
 | Geral | Depois de algum tempo, não é possível conectar a uma live novamente. | Investigando | Reiniciar o Discord pelo launcher. O argumento `--persist-gateway` está reservado para uma possível `v1.1.0`. |
 | Casos isolados | O console abre dentro do aplicativo Terminal e não fecha automaticamente. | Baixa prioridade | Ainda não disponível. |
 
