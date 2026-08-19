@@ -6,10 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>DiscordProxyRelay</AssemblyName>
     <RootNamespace>DiscordProxyRelay</RootNamespace>
-    <Version>1.0.2</Version>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
-    <InformationalVersion>1.0.2</InformationalVersion>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <InformationalVersion>1.1.0</InformationalVersion>
     <Product>DiscordProxyRelay</Product>
     <Description>Launcher de bootstrap por proxy para Discord Stable no Windows.</Description>
     <Company>uJFalkez</Company>
