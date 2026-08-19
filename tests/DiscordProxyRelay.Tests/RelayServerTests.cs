@@ -201,6 +201,34 @@ public sealed class RelayServerTests
     }
 
     [Fact]
+    public async Task GatewayConnectedCallbackReportsRegionalShardHost()
+    {
+        static async Task EchoAsync(Stream stream)
+        {
+            var buffer = new byte[32];
+            while (true)
+            {
+                var read = await stream.ReadAsync(buffer);
+                if (read == 0) return;
+                await stream.WriteAsync(buffer.AsMemory(0, read));
+            }
+        }
+        await using var gatewayTarget = new TcpTestServer(EchoAsync, repeat: true);
+        var gateway = new GatewayConnector(gatewayTarget.Port);
+        var messages = new List<string>();
+        await using var relay = await RelayServer.StartAsync(
+            new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US"),
+            new LocalConnector(1),
+            (_, _, _) => Task.FromResult<Stream>(new MemoryStream()),
+            gatewayProxyConnectorFactory: _ => gateway,
+            gatewayConnected: messages.Add,
+            cancellationToken: CancellationToken.None);
+        using var client = await ConnectThroughRelayAsync(relay.Port, "gateway-us-east1-d.discord.gg:443");
+
+        Assert.Equal(["Gateway via proxy: gateway-us-east1-d.discord.gg"], messages);
+    }
+
+    [Fact]
     public async Task RelayRejectsClientsBeyondActiveLimit()
     {
         await using var relay = await RelayServer.StartAsync(

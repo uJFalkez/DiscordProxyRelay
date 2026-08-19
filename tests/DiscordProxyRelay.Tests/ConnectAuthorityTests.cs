@@ -5,9 +5,11 @@ public sealed class ConnectAuthorityTests
     [Theory]
     [InlineData("gateway.discord.gg", true)]
     [InlineData("GATEWAY.DISCORD.GG", true)]
+    [InlineData("gateway-us-east1-d.discord.gg", true)]
+    [InlineData("gateway-us-east1-c.discord.gg", true)]
     [InlineData("canary.gateway.discord.gg", false)]
     [InlineData("gateway.discord.gg.example.com", false)]
-    public void IsDiscordGatewayMatchesOnlyTheExactHost(string host, bool expected)
+    public void IsDiscordGatewayMatchesRegionalShards(string host, bool expected)
     {
         Assert.Equal(expected, new ConnectAuthority(host, 443).IsDiscordGateway);
     }

@@ -46,7 +46,8 @@ internal sealed record LauncherDependencies(
                             findUsable,
                             output.WriteLine,
                             lifetime)
-                        : null),
+                        : null,
+                    gatewayConnected: verbose ? output.WriteLine : null),
             (installation, relayPort) => DiscordLauncher.Launch(installation, relayPort, verbose),
             persistGateway,
             Task.Delay,
@@ -179,11 +180,13 @@ internal sealed class LauncherApp(LauncherDependencies dependencies, TextWriter 
                 return 1;
             }
 
-            output.WriteLine("Gateway observado pelo proxy. Aguardando 10 segundos antes da troca definitiva...");
+            output.WriteLine("Gateway observado pelo proxy.");
+            if (!dependencies.PersistGateway)
+                output.WriteLine("Aguardando 10 segundos antes da troca definitiva...");
             await dependencies.Delay(TimeSpan.FromSeconds(10), runtimeToken);
             await relay.SwitchToDirectAsync();
             output.WriteLine(dependencies.PersistGateway
-                ? "Troca concluída. Conexões que não são do gateway são diretas; o gateway continua usando proxy."
+                ? "Conexões que não são do gateway são diretas; o gateway continua usando proxy."
                 : "Troca concluída. Novas conexões são diretas.");
             await dependencies.Delay(TimeSpan.FromSeconds(5), runtimeToken);
             dependencies.HideConsole();
