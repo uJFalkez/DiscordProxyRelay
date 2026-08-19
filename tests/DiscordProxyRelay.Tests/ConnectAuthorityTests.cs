@@ -3,6 +3,16 @@ namespace DiscordProxyRelay.Tests;
 public sealed class ConnectAuthorityTests
 {
     [Theory]
+    [InlineData("gateway.discord.gg", true)]
+    [InlineData("GATEWAY.DISCORD.GG", true)]
+    [InlineData("canary.gateway.discord.gg", false)]
+    [InlineData("gateway.discord.gg.example.com", false)]
+    public void IsDiscordGatewayMatchesOnlyTheExactHost(string host, bool expected)
+    {
+        Assert.Equal(expected, new ConnectAuthority(host, 443).IsDiscordGateway);
+    }
+
+    [Theory]
     [InlineData("gateway.discord.gg:443", "gateway.discord.gg")]
     [InlineData("127.0.0.1:443", "127.0.0.1")]
     [InlineData("[::1]:443", "::1")]

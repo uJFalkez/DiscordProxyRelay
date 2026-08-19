@@ -2,37 +2,34 @@ namespace DiscordProxyRelay.Tests;
 
 public sealed class ProgramTests
 {
-    public static TheoryData<string[], bool, int> ValidArguments => new()
+    public static TheoryData<string[], bool, bool> ValidArguments => new()
     {
-        { [], false, 10 },
-        { ["--verbose"], true, 10 },
-        { ["--gateway-wait-delay", "30"], false, 30 },
-        { ["--verbose", "--gateway-wait-delay", "30"], true, 30 },
-        { ["--gateway-wait-delay", "30", "--verbose"], true, 30 },
-        { ["--gateway-wait-delay", "1"], false, 1 },
-        { ["--gateway-wait-delay", "600"], false, 600 }
+        { [], false, false },
+        { ["--verbose"], true, false },
+        { ["--persist-gateway"], false, true },
+        { ["--verbose", "--persist-gateway"], true, true },
+        { ["--persist-gateway", "--verbose"], true, true }
     };
 
     public static TheoryData<string[]> InvalidArguments => new()
     {
-        { ["--gateway-wait-delay"] },
-        { ["--gateway-wait-delay", "0"] },
-        { ["--gateway-wait-delay", "601"] },
-        { ["--gateway-wait-delay", "1.5"] },
         { ["--verbose", "--verbose"] },
-        { ["--gateway-wait-delay", "10", "--gateway-wait-delay", "20"] },
-        { ["--unknown"] }
+        { ["--persist-gateway", "--persist-gateway"] },
+        { ["--persist-gateway=true"] },
+        { ["--persist-gateway", "true"] },
+        { ["--unknown"] },
+        { ["--gateway-wait-delay", "10"] }
     };
 
     [Theory]
     [MemberData(nameof(ValidArguments))]
-    public void TryParseArgumentsAcceptsValidOptions(string[] args, bool expectedVerbose, int expectedDelaySeconds)
+    public void TryParseArgumentsAcceptsValidOptions(string[] args, bool expectedVerbose, bool expectedPersistGateway)
     {
         var parsed = Program.TryParseArguments(args, out var options);
 
         Assert.True(parsed);
         Assert.Equal(expectedVerbose, options.Verbose);
-        Assert.Equal(TimeSpan.FromSeconds(expectedDelaySeconds), options.GatewayWaitDelay);
+        Assert.Equal(expectedPersistGateway, options.PersistGateway);
     }
 
     [Theory]
@@ -46,7 +43,7 @@ public sealed class ProgramTests
     public void UsageListsAllSupportedOptions()
     {
         Assert.Equal(
-            "Uso: DiscordProxyRelay.exe [--verbose] [--gateway-wait-delay <seconds>]",
+            "Uso: DiscordProxyRelay.exe [--verbose] [--persist-gateway]",
             Program.Usage);
     }
 }

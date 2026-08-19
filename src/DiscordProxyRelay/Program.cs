@@ -1,13 +1,12 @@
-using System.Globalization;
 using System.Text;
 
 namespace DiscordProxyRelay;
 
-internal sealed record LauncherOptions(bool Verbose, TimeSpan GatewayWaitDelay);
+internal sealed record LauncherOptions(bool Verbose, bool PersistGateway);
 
 internal static class Program
 {
-    internal const string Usage = "Uso: DiscordProxyRelay.exe [--verbose] [--gateway-wait-delay <seconds>]";
+    internal const string Usage = "Uso: DiscordProxyRelay.exe [--verbose] [--persist-gateway]";
 
     private static async Task<int> Main(string[] args)
     {
@@ -36,7 +35,7 @@ internal static class Program
         try
         {
             return await new LauncherApp(
-                LauncherDependencies.CreateDefault(output, options.Verbose, options.GatewayWaitDelay),
+                LauncherDependencies.CreateDefault(output, options.Verbose, options.PersistGateway),
                 output).RunAsync(cancellation.Token);
         }
         catch (OperationCanceledException)
@@ -55,8 +54,8 @@ internal static class Program
     {
         var verbose = false;
         var verboseSeen = false;
-        var gatewayWaitDelay = TimeSpan.FromSeconds(10);
-        var gatewayWaitDelaySeen = false;
+        var persistGateway = false;
+        var persistGatewaySeen = false;
 
         for (var index = 0; index < args.Length; index++)
         {
@@ -66,17 +65,9 @@ internal static class Program
                     verbose = true;
                     verboseSeen = true;
                     break;
-                case "--gateway-wait-delay" when !gatewayWaitDelaySeen:
-                    gatewayWaitDelaySeen = true;
-                    if (++index >= args.Length
-                        || !int.TryParse(args[index], NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds)
-                        || seconds is < 1 or > 600)
-                    {
-                        options = null!;
-                        return false;
-                    }
-
-                    gatewayWaitDelay = TimeSpan.FromSeconds(seconds);
+                case "--persist-gateway" when !persistGatewaySeen:
+                    persistGateway = true;
+                    persistGatewaySeen = true;
                     break;
                 default:
                     options = null!;
@@ -84,7 +75,7 @@ internal static class Program
             }
         }
 
-        options = new LauncherOptions(verbose, gatewayWaitDelay);
+        options = new LauncherOptions(verbose, persistGateway);
         return true;
     }
 }

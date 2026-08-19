@@ -25,6 +25,7 @@ public sealed record ProxyEndpoint(string Host, int Port, ProxyKind Kind, string
 public readonly record struct ConnectAuthority(string Host, int Port)
 {
     public string Value => Host.Contains(':', StringComparison.Ordinal) ? $"[{Host}]:{Port}" : $"{Host}:{Port}";
+    public bool IsDiscordGateway => Host.Equals("gateway.discord.gg", StringComparison.OrdinalIgnoreCase);
     public bool IsDiscordMedia =>
         Host.Equals("discord.media", StringComparison.OrdinalIgnoreCase) ||
         Host.EndsWith(".discord.media", StringComparison.OrdinalIgnoreCase);
