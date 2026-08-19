@@ -62,7 +62,7 @@ Basta fechar o Discord e executar `DiscordProxyRelay.exe`. O console mostra o pr
 | Argumento | Padrão | Descrição |
 | --- | --- | --- |
 | `--verbose` | Desativado | Mantém o console aberto e mostra os logs internos do Discord. |
-| `--persist-gateway` | Desativado | Mantém só o gateway do Discord no proxy após a inicialização. Booleano: basta estar presente. |
+| [Experimental] `--persist-gateway` | Desativado | Mantém só o gateway do Discord no proxy após a inicialização. Booleano: basta estar presente. |
 
 ## Como funciona
 
@@ -79,7 +79,7 @@ O relay não descriptografa TLS nem instala certificados. A filtragem geográfic
 | Origem | Bug | Status | Correção |
 | --- | --- | --- | --- |
 | [@light1ngbolt no X](https://x.com/light1ngbolt/status/2089861213387665767) | A feature fica indisponível como se tivesse iniciado no Brasil. | Externo ao relay | Causado pelo plugin `BetterSessions` do Vencord. |
-| Geral | Depois de um tempo, não conecta a uma live de novo. | Mitigação disponível | Use `--persist-gateway` para manter as reconexões no proxy. |
+| Geral | Depois de um tempo, não conecta a uma live de novo. | Em teste | Use `--persist-gateway` para manter as reconexões no proxy. |
 | Casos isolados | Console abre no app Terminal e não fecha sozinho. | Baixa prioridade | Sem correção ainda. |
 
 O comportamento depende do Discord atual e pode mudar sem aviso.
