@@ -34,3 +34,6 @@ docs/superpowers/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Logs
+debug_logs

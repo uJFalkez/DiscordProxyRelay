@@ -81,20 +81,22 @@ Na utilização normal, basta fechar o Discord e executar `DiscordProxyRelay.exe
 
 Se a inicialização falhar, feche completamente o Discord e execute o launcher novamente. Uma nova tentativa poderá selecionar outro proxy.
 
+## Argumentos
+
+O launcher funciona normalmente sem argumentos.
+
+| Argumento | Padrão | Descrição |
+| --- | --- | --- |
+| `--verbose` | Desativado | Mantém o console aberto e exibe também os logs internos do Discord. Nenhum log é salvo em arquivo. |
+| `--gateway-wait-delay <segundos>` | `10` segundos | Define quanto tempo o launcher aguarda após identificar o gateway antes de trocar novas conexões para a rota direta. Aceita valores entre `1` e `600`. |
+
+> [!TIP]
+> Se o Discord demora para carregar ou a feature não fica disponível, aumentar `--gateway-wait-delay` pode ajudar. Por exemplo: `.\DiscordProxyRelay.exe --gateway-wait-delay 60`.
+
 ## Visão geral
 
 O Discord é iniciado temporariamente por um proxy público de um dos países aprovados, sem modificar arquivos do cliente, injetar código ou instalar serviços no Windows.
 Depois que o gateway do Discord é identificado, novas conexões passam a usar rede brasileira diretamente. Conexões de voz e vídeo destinadas a `discord.media` nem tocam o proxy.
-
-### Verbose
-
-Para manter o console aberto e exibir também os logs do Discord, execute pelo PowerShell:
-
-```powershell
-.\DiscordProxyRelay.exe --verbose
-```
-
-Sem `--verbose`, os logs internos do Discord são descartados após a leitura. As mensagens do launcher continuam visíveis durante a inicialização.
 
 ## Como funciona
 
@@ -107,10 +109,23 @@ Sem `--verbose`, os logs internos do Discord são descartados após a leitura. A
 7. Exige um túnel com certificado TLS válido para `gateway.discord.gg`.
 8. Inicia um relay HTTP CONNECT somente em `127.0.0.1` e abre o Discord por esse relay.
 9. Faz com que `discord.media` e seus subdomínios ignorem o proxy, inclusive em portas RTC alternativas.
-10. Dez segundos depois de identificar o gateway, encerra os túneis de inicialização e direciona novas conexões para a rota direta.
+10. Após o atraso configurado, que é de `10` segundos por padrão, encerra os túneis de inicialização e direciona novas conexões para a rota direta.
 
 O relay não descriptografa TLS, não instala certificados e não lê o conteúdo das conexões do Discord.
 A filtragem geográfica apenas limita os países usados e não torna proxies públicos confiáveis.
+
+## Limitações
+
+- A funcionalidade do programa depende do comportamento atual do Discord e pode mudar sem aviso.
+- Se o gateway se reconectar pela rota direta, pode ser necessário fechar o Discord e executar o launcher novamente. (Em teste: talvez seja possível corrigir isso)
+
+## Bugs conhecidos
+
+| Origem | Bug | Status | Correção |
+| --- | --- | --- | --- |
+| [@light1ngbolt no X](https://x.com/light1ngbolt/status/2089861213387665767) | A feature continua indisponível como se a inicialização tivesse ocorrido no Brasil. | Em validação | Testar um tempo maior com `--gateway-wait-delay`. |
+| Geral | Depois de algum tempo, não é possível conectar a uma live novamente. | Investigando | Reiniciar o Discord pelo launcher. O argumento `--persist-gateway` está reservado para uma possível `v1.1.0`. |
+| Casos isolados | O console abre dentro do aplicativo Terminal e não fecha automaticamente. | Baixa prioridade | Ainda não disponível. |
 
 ## Privacidade e riscos
 
@@ -120,13 +135,6 @@ A filtragem geográfica apenas limita os países usados e não torna proxies pú
 - Um proxy público pode identificar seu IP de origem, os destinos acessados, os horários e o volume de tráfego. O conteúdo HTTPS e WSS permanece protegido por TLS.
 - Proxies públicos podem ficar lentos, desaparecer, rejeitar destinos ou provocar verificações adicionais do Discord.
 - Não compartilhe capturas do console sem revisar os endereços de proxy exibidos.
-
-## Limitações
-
-- A disponibilidade de recursos depende do comportamento atual do Discord e pode mudar sem aviso.
-- Se o gateway se reconectar pela rota direta, pode ser necessário fechar o Discord e executar o launcher novamente.
-- Não há garantia de que todas as contas, servidores ou sessões terão os mesmos recursos.
-- O funcionamento final deve ser avaliado pelo próprio usuário, especialmente após atualizações do Discord.
 
 ## Compilação
 
