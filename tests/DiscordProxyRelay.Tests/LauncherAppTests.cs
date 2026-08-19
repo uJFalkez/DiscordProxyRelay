@@ -76,13 +76,15 @@ public sealed class LauncherAppTests
     public async Task GatewaySuccessUsesRequiredOrderingAndDisposesRelay()
     {
         var events = new List<string>();
+        var delays = new List<TimeSpan>();
         var relay = new FakeRelay(events, Task.CompletedTask);
         var dependencies = CreateDependencies(
             relay: relay,
             launch: (_, _) => { events.Add("launch"); return true; },
             delay: (duration, cancellationToken) =>
             {
-                if (duration == TimeSpan.FromSeconds(60))
+                delays.Add(duration);
+                if (delays.Count == 1)
                 {
                     return Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
                 }
@@ -91,12 +93,14 @@ public sealed class LauncherAppTests
                 return Task.CompletedTask;
             },
             hide: () => events.Add("hide"),
-            monitor: _ => { events.Add("monitor"); return Task.CompletedTask; });
+            monitor: _ => { events.Add("monitor"); return Task.CompletedTask; },
+            gatewayWaitDelay: TimeSpan.FromSeconds(60));
 
         var exitCode = await new LauncherApp(dependencies, new StringWriter()).RunAsync(CancellationToken.None);
 
         Assert.Equal(0, exitCode);
-        Assert.Equal(["launch", "delay:10", "switch", "delay:5", "hide", "monitor", "dispose"], events);
+        Assert.Equal([TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(5)], delays);
+        Assert.Equal(["launch", "delay:60", "switch", "delay:5", "hide", "monitor", "dispose"], events);
     }
 
     [Fact]
@@ -243,7 +247,8 @@ public sealed class LauncherAppTests
         Func<DiscordInstallation, int, bool>? launch = null,
         Func<TimeSpan, CancellationToken, Task>? delay = null,
         Action? hide = null,
-        Func<CancellationToken, Task>? monitor = null) =>
+        Func<CancellationToken, Task>? monitor = null,
+        TimeSpan? gatewayWaitDelay = null) =>
         new(
             true,
             () => Path.GetTempPath(),
@@ -254,6 +259,7 @@ public sealed class LauncherAppTests
             probe ?? ((_, _) => Task.FromResult<ProxyEndpoint?>(Endpoint)),
             startRelay ?? ((_, _) => Task.FromResult<IRelay>(relay ?? new FakeRelay([], Task.CompletedTask))),
             launch ?? ((_, _) => true),
+            gatewayWaitDelay ?? TimeSpan.FromSeconds(10),
             delay ?? ((_, _) => Task.CompletedTask),
             hide ?? (() => { }),
             monitor ?? (_ => Task.CompletedTask));

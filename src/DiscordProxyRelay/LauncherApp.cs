@@ -10,11 +10,12 @@ internal sealed record LauncherDependencies(
     Func<IReadOnlyList<ProxyEndpoint>, CancellationToken, Task<ProxyEndpoint?>> Probe,
     Func<ProxyEndpoint, CancellationToken, Task<IRelay>> StartRelay,
     Func<DiscordInstallation, int, bool> Launch,
+    TimeSpan GatewayWaitDelay,
     Func<TimeSpan, CancellationToken, Task> Delay,
     Action HideConsole,
     Func<CancellationToken, Task> MonitorDiscord)
 {
-    internal static LauncherDependencies CreateDefault(TextWriter output, bool verbose)
+    internal static LauncherDependencies CreateDefault(TextWriter output, bool verbose, TimeSpan gatewayWaitDelay)
     {
         var connector = new ProxyConnector();
         var probe = new ProxyProbe(connector);
@@ -32,6 +33,7 @@ internal sealed record LauncherDependencies(
             async (endpoint, _) =>
                 await RelayServer.StartAsync(endpoint, connector, cancellationToken: CancellationToken.None),
             (installation, relayPort) => DiscordLauncher.Launch(installation, relayPort, verbose),
+            gatewayWaitDelay,
             Task.Delay,
             verbose ? () => { } : ConsoleWindow.Hide,
             DiscordProcessMonitor.WaitUntilStoppedAsync);
@@ -156,8 +158,8 @@ internal sealed class LauncherApp(LauncherDependencies dependencies, TextWriter 
                 return 1;
             }
 
-            output.WriteLine("Gateway observado pelo proxy. Preparando troca definitiva...");
-            await dependencies.Delay(TimeSpan.FromSeconds(10), runtimeToken);
+            output.WriteLine($"Gateway observado pelo proxy. Aguardando {dependencies.GatewayWaitDelay.TotalSeconds:0} segundos antes da troca definitiva...");
+            await dependencies.Delay(dependencies.GatewayWaitDelay, runtimeToken);
             await relay.SwitchToDirectAsync();
             output.WriteLine("Troca concluída. Novas conexões são diretas.");
             await dependencies.Delay(TimeSpan.FromSeconds(5), runtimeToken);
