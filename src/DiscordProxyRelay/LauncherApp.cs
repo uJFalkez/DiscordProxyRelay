@@ -10,30 +10,45 @@ internal sealed record LauncherDependencies(
     Func<IReadOnlyList<ProxyEndpoint>, CancellationToken, Task<ProxyEndpoint?>> Probe,
     Func<ProxyEndpoint, CancellationToken, Task<IRelay>> StartRelay,
     Func<DiscordInstallation, int, bool> Launch,
-    TimeSpan GatewayWaitDelay,
+    bool PersistGateway,
     Func<TimeSpan, CancellationToken, Task> Delay,
     Action HideConsole,
     Func<CancellationToken, Task> MonitorDiscord)
 {
-    internal static LauncherDependencies CreateDefault(TextWriter output, bool verbose, TimeSpan gatewayWaitDelay)
+    internal static LauncherDependencies CreateDefault(TextWriter output, bool verbose, bool persistGateway)
     {
         var connector = new ProxyConnector();
         var probe = new ProxyProbe(connector);
+        Func<CancellationToken, Task<IReadOnlyList<ProxyEndpoint>>> fetch = ProxyCatalog.FetchAsync;
+        Func<IReadOnlyList<ProxyEndpoint>, CancellationToken, Task<ProxyEndpoint?>> findUsable =
+            (candidates, cancellationToken) => probe.FindUsableAsync(
+                candidates,
+                cancellationToken,
+                endpoint => output.WriteLine($"Testando {endpoint.DisplayValue}..."));
         return new LauncherDependencies(
             OperatingSystem.IsWindows(),
             () => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             DiscordLocator.FindStable,
             DiscordProcessMonitor.Inspect,
             DiscordProcessMonitor.WaitUntilStoppedAsync,
-            ProxyCatalog.FetchAsync,
-            (candidates, cancellationToken) => probe.FindUsableAsync(
-                candidates,
-                cancellationToken,
-                endpoint => output.WriteLine($"Testando {endpoint.DisplayValue}...")),
+            fetch,
+            findUsable,
             async (endpoint, _) =>
-                await RelayServer.StartAsync(endpoint, connector, cancellationToken: CancellationToken.None),
+                await RelayServer.StartAsync(
+                    endpoint,
+                    connector,
+                    cancellationToken: CancellationToken.None,
+                    gatewayProxyConnectorFactory: persistGateway
+                        ? lifetime => new GatewayProxyManager(
+                            endpoint,
+                            connector,
+                            fetch,
+                            findUsable,
+                            output.WriteLine,
+                            lifetime)
+                        : null),
             (installation, relayPort) => DiscordLauncher.Launch(installation, relayPort, verbose),
-            gatewayWaitDelay,
+            persistGateway,
             Task.Delay,
             verbose ? () => { } : ConsoleWindow.Hide,
             DiscordProcessMonitor.WaitUntilStoppedAsync);
@@ -101,6 +116,10 @@ internal sealed class LauncherApp(LauncherDependencies dependencies, TextWriter 
         }
 
         output.WriteLine($"Proxy selecionado: {selected.DisplayValue}");
+        if (dependencies.PersistGateway)
+        {
+            output.WriteLine("Gateway persistente ativado.");
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
         installation = dependencies.Locate(localAppData);
@@ -151,17 +170,21 @@ internal sealed class LauncherApp(LauncherDependencies dependencies, TextWriter 
             if (!observed)
             {
                 await relay.SwitchToDirectAsync();
-                output.WriteLine("Gateway não observado. Relay alterado para conexão direta.");
+                output.WriteLine(dependencies.PersistGateway
+                    ? "Gateway não observado. Conexões que não são do gateway são diretas; o gateway continua usando proxy."
+                    : "Gateway não observado. Relay alterado para conexão direta.");
                 await dependencies.Delay(TimeSpan.FromSeconds(5), runtimeToken);
                 dependencies.HideConsole();
                 await dependencies.MonitorDiscord(runtimeToken);
                 return 1;
             }
 
-            output.WriteLine($"Gateway observado pelo proxy. Aguardando {dependencies.GatewayWaitDelay.TotalSeconds:0} segundos antes da troca definitiva...");
-            await dependencies.Delay(dependencies.GatewayWaitDelay, runtimeToken);
+            output.WriteLine("Gateway observado pelo proxy. Aguardando 10 segundos antes da troca definitiva...");
+            await dependencies.Delay(TimeSpan.FromSeconds(10), runtimeToken);
             await relay.SwitchToDirectAsync();
-            output.WriteLine("Troca concluída. Novas conexões são diretas.");
+            output.WriteLine(dependencies.PersistGateway
+                ? "Troca concluída. Conexões que não são do gateway são diretas; o gateway continua usando proxy."
+                : "Troca concluída. Novas conexões são diretas.");
             await dependencies.Delay(TimeSpan.FromSeconds(5), runtimeToken);
             dependencies.HideConsole();
             await dependencies.MonitorDiscord(runtimeToken);

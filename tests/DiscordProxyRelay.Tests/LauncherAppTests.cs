@@ -78,8 +78,10 @@ public sealed class LauncherAppTests
         var events = new List<string>();
         var delays = new List<TimeSpan>();
         var relay = new FakeRelay(events, Task.CompletedTask);
+        var output = new StringWriter();
         var dependencies = CreateDependencies(
             relay: relay,
+            persistGateway: true,
             launch: (_, _) => { events.Add("launch"); return true; },
             delay: (duration, cancellationToken) =>
             {
@@ -93,14 +95,17 @@ public sealed class LauncherAppTests
                 return Task.CompletedTask;
             },
             hide: () => events.Add("hide"),
-            monitor: _ => { events.Add("monitor"); return Task.CompletedTask; },
-            gatewayWaitDelay: TimeSpan.FromSeconds(17));
+            monitor: _ => { events.Add("monitor"); return Task.CompletedTask; });
 
-        var exitCode = await new LauncherApp(dependencies, new StringWriter()).RunAsync(CancellationToken.None);
+        var exitCode = await new LauncherApp(dependencies, output).RunAsync(CancellationToken.None);
 
         Assert.Equal(0, exitCode);
-        Assert.Equal([TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(17), TimeSpan.FromSeconds(5)], delays);
-        Assert.Equal(["launch", "delay:17", "switch", "delay:5", "hide", "monitor", "dispose"], events);
+        Assert.Equal([TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5)], delays);
+        Assert.Equal(["launch", "delay:10", "switch", "delay:5", "hide", "monitor", "dispose"], events);
+        Assert.Contains("Gateway persistente ativado.", output.ToString().Split(Environment.NewLine));
+        Assert.DoesNotContain("Gateway continuará usando proxy após a troca.", output.ToString());
+        Assert.Contains("Conexões que não são do gateway são diretas; o gateway continua usando proxy.", output.ToString());
+        Assert.DoesNotContain("Novas conexões são diretas.", output.ToString());
     }
 
     [Fact]
@@ -108,17 +113,21 @@ public sealed class LauncherAppTests
     {
         var events = new List<string>();
         var relay = new FakeRelay(events, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task);
+        var output = new StringWriter();
         var dependencies = CreateDependencies(
             relay: relay,
+            persistGateway: true,
             launch: (_, _) => { events.Add("launch"); return true; },
             delay: (duration, _) => { events.Add($"delay:{duration.TotalSeconds:0}"); return Task.CompletedTask; },
             hide: () => events.Add("hide"),
             monitor: _ => { events.Add("monitor"); return Task.CompletedTask; });
 
-        var exitCode = await new LauncherApp(dependencies, new StringWriter()).RunAsync(CancellationToken.None);
+        var exitCode = await new LauncherApp(dependencies, output).RunAsync(CancellationToken.None);
 
         Assert.Equal(1, exitCode);
         Assert.Equal(["launch", "delay:60", "switch", "delay:5", "hide", "monitor", "dispose"], events);
+        Assert.Contains("Conexões que não são do gateway são diretas; o gateway continua usando proxy.", output.ToString());
+        Assert.DoesNotContain("Relay alterado para conexão direta.", output.ToString());
     }
 
     [Fact]
@@ -248,7 +257,7 @@ public sealed class LauncherAppTests
         Func<TimeSpan, CancellationToken, Task>? delay = null,
         Action? hide = null,
         Func<CancellationToken, Task>? monitor = null,
-        TimeSpan? gatewayWaitDelay = null) =>
+        bool persistGateway = false) =>
         new(
             true,
             () => Path.GetTempPath(),
@@ -259,7 +268,7 @@ public sealed class LauncherAppTests
             probe ?? ((_, _) => Task.FromResult<ProxyEndpoint?>(Endpoint)),
             startRelay ?? ((_, _) => Task.FromResult<IRelay>(relay ?? new FakeRelay([], Task.CompletedTask))),
             launch ?? ((_, _) => true),
-            gatewayWaitDelay ?? TimeSpan.FromSeconds(10),
+            persistGateway,
             delay ?? ((_, _) => Task.CompletedTask),
             hide ?? (() => { }),
             monitor ?? (_ => Task.CompletedTask));

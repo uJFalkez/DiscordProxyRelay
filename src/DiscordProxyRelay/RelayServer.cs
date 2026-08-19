@@ -17,6 +17,7 @@ public sealed class RelayServer : IRelay
     internal const int MaximumActiveClients = 64;
     private readonly ProxyEndpoint _proxy;
     private readonly IProxyConnector _proxyConnector;
+    private readonly IGatewayProxyConnector? _gatewayProxyConnector;
     private readonly Func<string, int, CancellationToken, Task<Stream>> _directConnector;
     private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
     private readonly CancellationTokenSource _lifetime;
@@ -34,7 +35,8 @@ public sealed class RelayServer : IRelay
         IProxyConnector proxyConnector,
         Func<string, int, CancellationToken, Task<Stream>> directConnector,
         TimeSpan connectionTimeout,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<CancellationToken, IGatewayProxyConnector>? gatewayProxyConnectorFactory)
     {
         _proxy = proxy;
         _proxyConnector = proxyConnector;
@@ -42,6 +44,7 @@ public sealed class RelayServer : IRelay
         _connectionTimeout = connectionTimeout;
         _lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _bootstrap = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _gatewayProxyConnector = gatewayProxyConnectorFactory?.Invoke(_lifetime.Token);
     }
 
     public int Port => LocalEndpoint.Port;
@@ -52,14 +55,16 @@ public sealed class RelayServer : IRelay
         ProxyEndpoint proxy,
         IProxyConnector? proxyConnector = null,
         Func<string, int, CancellationToken, Task<Stream>>? directConnector = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<CancellationToken, IGatewayProxyConnector>? gatewayProxyConnectorFactory = null)
     {
         return StartAsync(
             proxy,
             proxyConnector ?? new ProxyConnector(),
             directConnector ?? ConnectDirectAsync,
             TimeSpan.FromSeconds(5),
-            cancellationToken);
+            cancellationToken,
+            gatewayProxyConnectorFactory);
     }
 
     internal static Task<RelayServer> StartAsync(
@@ -67,14 +72,21 @@ public sealed class RelayServer : IRelay
         IProxyConnector proxyConnector,
         Func<string, int, CancellationToken, Task<Stream>> directConnector,
         TimeSpan connectionTimeout,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<CancellationToken, IGatewayProxyConnector>? gatewayProxyConnectorFactory = null)
     {
         if (connectionTimeout <= TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(connectionTimeout));
         }
 
-        var relay = new RelayServer(proxy, proxyConnector, directConnector, connectionTimeout, cancellationToken);
+        var relay = new RelayServer(
+            proxy,
+            proxyConnector,
+            directConnector,
+            connectionTimeout,
+            cancellationToken,
+            gatewayProxyConnectorFactory);
         relay._listener.Start();
         relay._acceptLoop = relay.AcceptLoopAsync();
         return Task.FromResult(relay);
@@ -183,15 +195,18 @@ public sealed class RelayServer : IRelay
 
             var bootstrap = Volatile.Read(ref _mode) == 0;
             var directRtc = authority.IsDiscordMedia;
-            var tunnelToken = bootstrap && !directRtc ? _bootstrap.Token : _lifetime.Token;
+            var persistentGateway = _gatewayProxyConnector is not null && authority.IsDiscordGateway;
+            var tunnelToken = bootstrap && !directRtc && !persistentGateway ? _bootstrap.Token : _lifetime.Token;
             Stream upstream;
             try
             {
                 using var connectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(tunnelToken);
                 connectionCancellation.CancelAfter(_connectionTimeout);
-                upstream = bootstrap && !directRtc
-                    ? await _proxyConnector.ConnectAsync(_proxy, authority.Host, authority.Port, connectionCancellation.Token)
-                    : await _directConnector(authority.Host, authority.Port, connectionCancellation.Token);
+                upstream = persistentGateway
+                    ? await _gatewayProxyConnector!.ConnectAsync(authority.Host, authority.Port, connectionCancellation.Token)
+                    : bootstrap && !directRtc
+                        ? await _proxyConnector.ConnectAsync(_proxy, authority.Host, authority.Port, connectionCancellation.Token)
+                        : await _directConnector(authority.Host, authority.Port, connectionCancellation.Token);
             }
             catch (Exception exception) when (exception is IOException or SocketException or OperationCanceledException or ObjectDisposedException)
             {
@@ -201,7 +216,7 @@ public sealed class RelayServer : IRelay
 
             await using (upstream)
             {
-                if (bootstrap && authority.Host.Equals("gateway.discord.gg", StringComparison.OrdinalIgnoreCase))
+                if (bootstrap && authority.IsDiscordGateway)
                 {
                     _gatewayObserved.TrySetResult();
                 }
