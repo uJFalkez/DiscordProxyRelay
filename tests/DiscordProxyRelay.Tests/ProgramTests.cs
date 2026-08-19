@@ -41,4 +41,12 @@ public sealed class ProgramTests
     {
         Assert.False(Program.TryParseArguments(args, out _));
     }
+
+    [Fact]
+    public void UsageListsAllSupportedOptions()
+    {
+        Assert.Equal(
+            "Uso: DiscordProxyRelay.exe [--verbose] [--gateway-wait-delay <seconds>]",
+            Program.Usage);
+    }
 }

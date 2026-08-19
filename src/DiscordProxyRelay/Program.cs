@@ -7,12 +7,14 @@ internal sealed record LauncherOptions(bool Verbose, TimeSpan GatewayWaitDelay);
 
 internal static class Program
 {
+    internal const string Usage = "Uso: DiscordProxyRelay.exe [--verbose] [--gateway-wait-delay <seconds>]";
+
     private static async Task<int> Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
         if (!TryParseArguments(args, out var options))
         {
-            Console.WriteLine("Uso: DiscordProxyRelay.exe [--verbose] [--gateway-wait-delay <seconds>]");
+            Console.WriteLine(Usage);
             return 1;
         }
 

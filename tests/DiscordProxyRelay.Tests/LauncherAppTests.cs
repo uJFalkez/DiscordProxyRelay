@@ -94,13 +94,13 @@ public sealed class LauncherAppTests
             },
             hide: () => events.Add("hide"),
             monitor: _ => { events.Add("monitor"); return Task.CompletedTask; },
-            gatewayWaitDelay: TimeSpan.FromSeconds(60));
+            gatewayWaitDelay: TimeSpan.FromSeconds(17));
 
         var exitCode = await new LauncherApp(dependencies, new StringWriter()).RunAsync(CancellationToken.None);
 
         Assert.Equal(0, exitCode);
-        Assert.Equal([TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(5)], delays);
-        Assert.Equal(["launch", "delay:60", "switch", "delay:5", "hide", "monitor", "dispose"], events);
+        Assert.Equal([TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(17), TimeSpan.FromSeconds(5)], delays);
+        Assert.Equal(["launch", "delay:17", "switch", "delay:5", "hide", "monitor", "dispose"], events);
     }
 
     [Fact]
