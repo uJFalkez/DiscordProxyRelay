@@ -2,11 +2,11 @@ using System.Text;
 
 namespace DiscordProxyRelay;
 
-internal sealed record LauncherOptions(bool Verbose, bool PersistGateway);
+internal sealed record LauncherOptions(bool Verbose, bool TemporaryGateway, bool DeprecatedPersistGatewaySeen);
 
 internal static class Program
 {
-    internal const string Usage = "Uso: DiscordProxyRelay.exe [--verbose] [--persist-gateway]";
+    internal const string Usage = "Uso: DiscordProxyRelay.exe [--verbose] [--temporary-gateway]";
 
     private static async Task<int> Main(string[] args)
     {
@@ -25,6 +25,11 @@ internal static class Program
             return 1;
         }
 
+        if (options.DeprecatedPersistGatewaySeen)
+        {
+            output.WriteLine("Aviso: --persist-gateway está obsoleto; o gateway persistente agora é o padrão.");
+        }
+
         using var cancellation = new CancellationTokenSource();
         Console.CancelKeyPress += (_, eventArgs) =>
         {
@@ -35,7 +40,7 @@ internal static class Program
         try
         {
             return await new LauncherApp(
-                LauncherDependencies.CreateDefault(output, options.Verbose, options.PersistGateway),
+                LauncherDependencies.CreateDefault(output, options.Verbose, !options.TemporaryGateway),
                 output).RunAsync(cancellation.Token);
         }
         catch (OperationCanceledException)
@@ -54,8 +59,9 @@ internal static class Program
     {
         var verbose = false;
         var verboseSeen = false;
-        var persistGateway = false;
-        var persistGatewaySeen = false;
+        var temporaryGateway = false;
+        var temporaryGatewaySeen = false;
+        var deprecatedPersistGatewaySeen = false;
 
         for (var index = 0; index < args.Length; index++)
         {
@@ -65,9 +71,12 @@ internal static class Program
                     verbose = true;
                     verboseSeen = true;
                     break;
-                case "--persist-gateway" when !persistGatewaySeen:
-                    persistGateway = true;
-                    persistGatewaySeen = true;
+                case "--temporary-gateway" when !temporaryGatewaySeen:
+                    temporaryGateway = true;
+                    temporaryGatewaySeen = true;
+                    break;
+                case "--persist-gateway" when !deprecatedPersistGatewaySeen:
+                    deprecatedPersistGatewaySeen = true;
                     break;
                 default:
                     options = null!;
@@ -75,7 +84,7 @@ internal static class Program
             }
         }
 
-        options = new LauncherOptions(verbose, persistGateway);
+        options = new LauncherOptions(verbose, temporaryGateway, deprecatedPersistGatewaySeen);
         return true;
     }
 }

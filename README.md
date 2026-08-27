@@ -57,12 +57,16 @@ Abra `DiscordProxyRelay.exe` e aguarde: o programa busca e testa proxies, seleci
 
 Basta fechar o Discord e executar `DiscordProxyRelay.exe`. O console mostra o progresso, mas nada é salvo em arquivo. Se falhar, feche o Discord e tente de novo.
 
+Por padrão, o gateway do Discord permanece no proxy após a inicialização. Para usar o comportamento antigo (desligar o proxy após a inicialização), use `--temporary-gateway`.
+
 ### Argumentos
 
 | Argumento | Padrão | Descrição |
 | --- | --- | --- |
 | `--verbose` | Desativado | Mantém o console aberto e mostra os logs internos do Discord. |
-| [Experimental] `--persist-gateway` | Desativado | Mantém só o gateway do Discord no proxy após a inicialização. Booleano: basta estar presente. |
+| `--temporary-gateway` | Desativado | Desliga o gateway persistente: após a inicialização, o proxy é encerrado e tudo passa a usar a rota direta. |
+
+> `--persist-gateway` foi descontinuado: agora é o padrão e não faz mais nada (exibe apenas um aviso).
 
 ## Como funciona
 
@@ -70,7 +74,7 @@ Basta fechar o Discord e executar `DiscordProxyRelay.exe`. O console mostra o pr
 - Valida um túnel TLS para `gateway.discord.gg` e abre o Discord por um relay local em `127.0.0.1`.
 - Conexões de voz e vídeo (`discord.media`) nunca passam pelo proxy.
 - Dez segundos após identificar o gateway, o tráfego comum passa a usar a rede direta.
-- Com `--persist-gateway`, o gateway fica no proxy e troca de proxy após duas falhas consecutivas ao conectar; sem substituto, mantém o atual e nunca usa conexão direta.
+- Por padrão, o gateway fica no proxy e troca de proxy após duas falhas consecutivas ao conectar; sem substituto, mantém o atual e nunca usa conexão direta. Com `--temporary-gateway`, o gateway também vai para a rota direta após a inicialização.
 
 O relay não descriptografa TLS nem instala certificados. A filtragem geográfica não torna proxies públicos confiáveis.
 
@@ -79,7 +83,7 @@ O relay não descriptografa TLS nem instala certificados. A filtragem geográfic
 | Origem | Bug | Status | Correção |
 | --- | --- | --- | --- |
 | [@light1ngbolt no X](https://x.com/light1ngbolt/status/2089861213387665767) | A feature fica indisponível como se tivesse iniciado no Brasil. | Externo ao relay | Causado pelo plugin `BetterSessions` do Vencord. |
-| Geral | Depois de um tempo, não conecta a uma live de novo. | Em teste | Use `--persist-gateway` para manter as reconexões no proxy. |
+| Geral | Depois de um tempo, não conecta a uma live de novo. | Mitigado | O gateway persistente (padrão) mantém as reconexões no proxy. |
 | Casos isolados | Console abre no app Terminal e não fecha sozinho. | Baixa prioridade | Sem correção ainda. |
 
 O comportamento depende do Discord atual e pode mudar sem aviso.

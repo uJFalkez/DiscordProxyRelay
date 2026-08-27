@@ -2,19 +2,24 @@ namespace DiscordProxyRelay.Tests;
 
 public sealed class ProgramTests
 {
-    public static TheoryData<string[], bool, bool> ValidArguments => new()
+    public static TheoryData<string[], bool, bool, bool> ValidArguments => new()
     {
-        { [], false, false },
-        { ["--verbose"], true, false },
-        { ["--persist-gateway"], false, true },
-        { ["--verbose", "--persist-gateway"], true, true },
-        { ["--persist-gateway", "--verbose"], true, true }
+        { [], false, false, false },
+        { ["--verbose"], true, false, false },
+        { ["--temporary-gateway"], false, true, false },
+        { ["--verbose", "--temporary-gateway"], true, true, false },
+        { ["--temporary-gateway", "--verbose"], true, true, false },
+        { ["--persist-gateway"], false, false, true },
+        { ["--persist-gateway", "--temporary-gateway"], false, true, true },
+        { ["--temporary-gateway", "--persist-gateway"], false, true, true }
     };
 
     public static TheoryData<string[]> InvalidArguments => new()
     {
         { ["--verbose", "--verbose"] },
+        { ["--temporary-gateway", "--temporary-gateway"] },
         { ["--persist-gateway", "--persist-gateway"] },
+        { ["--temporary-gateway=true"] },
         { ["--persist-gateway=true"] },
         { ["--persist-gateway", "true"] },
         { ["--unknown"] },
@@ -23,13 +28,18 @@ public sealed class ProgramTests
 
     [Theory]
     [MemberData(nameof(ValidArguments))]
-    public void TryParseArgumentsAcceptsValidOptions(string[] args, bool expectedVerbose, bool expectedPersistGateway)
+    public void TryParseArgumentsAcceptsValidOptions(
+        string[] args,
+        bool expectedVerbose,
+        bool expectedTemporaryGateway,
+        bool expectedDeprecatedPersistGatewaySeen)
     {
         var parsed = Program.TryParseArguments(args, out var options);
 
         Assert.True(parsed);
         Assert.Equal(expectedVerbose, options.Verbose);
-        Assert.Equal(expectedPersistGateway, options.PersistGateway);
+        Assert.Equal(expectedTemporaryGateway, options.TemporaryGateway);
+        Assert.Equal(expectedDeprecatedPersistGatewaySeen, options.DeprecatedPersistGatewaySeen);
     }
 
     [Theory]
@@ -43,7 +53,7 @@ public sealed class ProgramTests
     public void UsageListsAllSupportedOptions()
     {
         Assert.Equal(
-            "Uso: DiscordProxyRelay.exe [--verbose] [--persist-gateway]",
+            "Uso: DiscordProxyRelay.exe [--verbose] [--temporary-gateway]",
             Program.Usage);
     }
 }
