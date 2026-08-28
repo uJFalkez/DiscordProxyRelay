@@ -84,7 +84,7 @@ O relay não descriptografa TLS nem instala certificados. A filtragem geográfic
 | --- | --- | --- | --- |
 | [@light1ngbolt no X](https://x.com/light1ngbolt/status/2089861213387665767) | A feature fica indisponível como se tivesse iniciado no Brasil. | Externo ao relay | Causado pelo plugin `BetterSessions` do Vencord. |
 | Geral | Depois de um tempo, não conecta a uma live de novo. | Mitigado | O gateway persistente (padrão) mantém as reconexões no proxy. |
-| Casos isolados | Console abre no app Terminal e não fecha sozinho. | Baixa prioridade | Sem correção ainda. |
+| Casos isolados | Console abre no app Terminal e não fecha sozinho. | Corrigido na `v1.2.1` | O relay se desanexa do console após a inicialização. |
 
 O comportamento depende do Discord atual e pode mudar sem aviso.
 

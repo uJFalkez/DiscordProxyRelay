@@ -11,12 +11,29 @@ public static class ConsoleWindow
             return;
         }
 
-        var window = GetConsoleWindow();
+        HideCore(FreeConsole, GetConsoleWindow, ShowWindow);
+    }
+
+    internal static void HideCore(
+        Func<bool> freeConsole,
+        Func<IntPtr> getConsoleWindow,
+        Func<IntPtr, int, bool> showWindow)
+    {
+        if (freeConsole())
+        {
+            return;
+        }
+
+        var window = getConsoleWindow();
         if (window != IntPtr.Zero)
         {
-            ShowWindow(window, 0);
+            showWindow(window, 0);
         }
     }
+
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool FreeConsole();
 
     [DllImport("kernel32.dll")]
     private static extern IntPtr GetConsoleWindow();
