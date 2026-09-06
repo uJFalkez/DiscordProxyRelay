@@ -1,11 +1,14 @@
 # DiscordProxyRelay
 
+> [!IMPORTANT]
+> Não funciona mais!! Único jeito que achei que funciona é usar VPN o tempo todo (caro e lento).
+> Ligar a VPN só no boot do Discord também não funciona mais, precisa ficar ligada o tempo todo.
+> Se tiver uma sugestão, me chame no meu discord: `falkezz#5262`
+
 [![Última versão](https://img.shields.io/github/v/release/uJFalkez/DiscordProxyRelay?display_name=tag&style=flat-square)](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest)
 [![Plataforma](https://img.shields.io/badge/plataforma-Windows%20x64-0078D4?style=flat-square&logo=windows)](#requisitos)
 [![.NET](https://img.shields.io/badge/.NET-9.0.19-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Licença](https://img.shields.io/github/license/uJFalkez/DiscordProxyRelay?style=flat-square)](LICENSE)
-
-Qualquer dúvida, me chame no meu discord: `falkezz#5262`
 
 > [!IMPORTANT]
 > O programa usa proxies públicos de terceiros — leia [Privacidade e riscos](#privacidade-e-riscos) antes de usar. Baixe apenas da página oficial de [Releases](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest).
