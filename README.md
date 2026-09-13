@@ -1,8 +1,7 @@
 # DiscordProxyRelay
 
 > [!IMPORTANT]
-> Não funciona mais!! Único jeito que achei que funciona é usar VPN o tempo todo (caro e lento).
-> Ligar a VPN só no boot do Discord também não funciona mais, precisa ficar ligada o tempo todo.
+> Não funciona mais!! Estou trabalhando pra implementar uma automação de um novo macete que descobri.
 > Se tiver uma sugestão, me chame no meu discord: `falkezz#5262`
 
 [![Última versão](https://img.shields.io/github/v/release/uJFalkez/DiscordProxyRelay?display_name=tag&style=flat-square)](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest)
