@@ -70,6 +70,20 @@ public readonly record struct ConnectAuthority(string Host, int Port)
 
             host = value[..separator];
             portText = value[(separator + 1)..];
+            if (host.EndsWith(".", StringComparison.Ordinal))
+            {
+                if (host.EndsWith("..", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                host = host[..^1];
+                if (Uri.CheckHostName(host) != UriHostNameType.Dns)
+                {
+                    return false;
+                }
+            }
+
             if (host.Length > 253 || Uri.CheckHostName(host) == UriHostNameType.Unknown)
             {
                 return false;

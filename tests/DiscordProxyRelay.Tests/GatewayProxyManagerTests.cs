@@ -34,6 +34,61 @@ public sealed class GatewayProxyManagerTests
     }
 
     [Fact]
+    public async Task MediaSuccessResetsFailureFromGatewayDestination()
+    {
+        var endpoint = new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US");
+        var outcomes = new Queue<Func<Stream>>([
+            () => throw new IOException(),
+            () => new MemoryStream(),
+            () => throw new IOException(),
+        ]);
+        var connector = new DelegateConnector((_, _, _, _) => Task.FromResult(outcomes.Dequeue()()));
+        var catalogCalls = 0;
+        var manager = new GatewayProxyManager(
+            endpoint,
+            connector,
+            _ =>
+            {
+                Interlocked.Increment(ref catalogCalls);
+                return Task.FromResult<IReadOnlyList<ProxyEndpoint>>([]);
+            },
+            (_, _) => Task.FromResult<ProxyEndpoint?>(null),
+            _ => { },
+            CancellationToken.None);
+
+        await Assert.ThrowsAsync<IOException>(() => manager.ConnectAsync("gateway.discord.gg", 443, default));
+        await using (await manager.ConnectAsync("c-gru.discord.media", 8443, default)) { }
+        await Assert.ThrowsAsync<IOException>(() => manager.ConnectAsync("gateway.discord.gg", 443, default));
+        await manager.WaitForRotationAsync();
+
+        Assert.Equal(0, Volatile.Read(ref catalogCalls));
+    }
+
+    [Fact]
+    public async Task FailuresAcrossGatewayAndMediaDestinationsStartExactlyOneRotation()
+    {
+        var endpoint = new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US");
+        var catalogCalls = 0;
+        var manager = new GatewayProxyManager(
+            endpoint,
+            new DelegateConnector((_, _, _, _) => Task.FromException<Stream>(new IOException())),
+            _ =>
+            {
+                Interlocked.Increment(ref catalogCalls);
+                return Task.FromResult<IReadOnlyList<ProxyEndpoint>>([]);
+            },
+            (_, _) => Task.FromResult<ProxyEndpoint?>(null),
+            _ => { },
+            CancellationToken.None);
+
+        await Assert.ThrowsAsync<IOException>(() => manager.ConnectAsync("gateway.discord.gg", 443, default));
+        await Assert.ThrowsAsync<IOException>(() => manager.ConnectAsync("c-gru.discord.media", 8443, default));
+        await manager.WaitForRotationAsync().WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(1, Volatile.Read(ref catalogCalls));
+    }
+
+    [Fact]
     public async Task SecondConsecutiveFailureStartsOneReplacementSearchAndFutureConnectsUseReplacement()
     {
         var failed = new ProxyEndpoint("failed.test", 8080, ProxyKind.Http, "US");

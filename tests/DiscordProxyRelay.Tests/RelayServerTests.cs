@@ -328,6 +328,36 @@ public sealed class RelayServerTests
     }
 
     [Fact]
+    public async Task PersistentFqdnMediaControlUsesGatewayRouteWithNormalizedHost()
+    {
+        await using var target = new TcpTestServer(async stream =>
+        {
+            var buffer = new byte[32];
+            var read = await stream.ReadAsync(buffer);
+            await stream.WriteAsync(buffer.AsMemory(0, read));
+        });
+        var gateway = new GatewayConnector(target.Port);
+        var directCalls = 0;
+        await using var relay = await RelayServer.StartAsync(
+            new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US"),
+            new LocalConnector(1),
+            (_, _, _) =>
+            {
+                Interlocked.Increment(ref directCalls);
+                return Task.FromResult<Stream>(new MemoryStream());
+            },
+            gatewayProxyConnectorFactory: _ => gateway,
+            cancellationToken: CancellationToken.None);
+
+        using var client = await ConnectThroughRelayAsync(relay.Port, "c-gru.discord.media.:8443");
+        await client.GetStream().WriteAsync("media"u8.ToArray());
+
+        Assert.Equal("media", await ReadTextAsync(client.GetStream(), 5));
+        Assert.Equal([new ConnectAuthority("c-gru.discord.media", 8443)], gateway.Calls);
+        Assert.Equal(0, Volatile.Read(ref directCalls));
+    }
+
+    [Fact]
     public async Task VerboseCallbackReportsGatewayAndMediaControlRoutes()
     {
         static async Task EchoAsync(Stream stream)
@@ -357,6 +387,31 @@ public sealed class RelayServerTests
             "Gateway via proxy: gateway.discord.gg:443",
             "Media control via proxy: c-gru.discord.media:8443",
         ], messages);
+    }
+
+    [Fact]
+    public async Task VerboseCallbackExceptionDoesNotInterruptConnectTunnel()
+    {
+        await using var target = new TcpTestServer(async stream =>
+        {
+            var buffer = new byte[32];
+            var read = await stream.ReadAsync(buffer);
+            await stream.WriteAsync(buffer.AsMemory(0, read));
+        });
+        var gateway = new GatewayConnector(target.Port);
+        await using var relay = await RelayServer.StartAsync(
+            new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US"),
+            new LocalConnector(1),
+            (_, _, _) => Task.FromResult<Stream>(new MemoryStream()),
+            gatewayProxyConnectorFactory: _ => gateway,
+            gatewayConnected: _ => throw new InvalidOperationException("verbose failed"),
+            cancellationToken: CancellationToken.None);
+
+        using var client = await ConnectThroughRelayAsync(relay.Port, "gateway.discord.gg:443");
+        await client.GetStream().WriteAsync("alive"u8.ToArray());
+
+        Assert.Equal("alive", await ReadTextAsync(client.GetStream(), 5));
+        Assert.Equal([new ConnectAuthority("gateway.discord.gg", 443)], gateway.Calls);
     }
 
     [Fact]

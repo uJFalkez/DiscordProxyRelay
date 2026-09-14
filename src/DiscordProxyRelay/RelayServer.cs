@@ -208,11 +208,11 @@ public sealed class RelayServer : IRelay
             if (authority.IsDiscordGateway)
             {
                 var proxied = persistentLocationRoute || (bootstrap && !directRtc);
-                _gatewayConnected?.Invoke($"Gateway {(proxied ? "via proxy" : "direto")}: {authority.Value}");
+                ReportConnection($"Gateway {(proxied ? "via proxy" : "direto")}: {authority.Value}");
             }
             else if (authority.IsDiscordMediaControl && (persistentLocationRoute || bootstrap))
             {
-                _gatewayConnected?.Invoke($"Media control via proxy: {authority.Value}");
+                ReportConnection($"Media control via proxy: {authority.Value}");
             }
             Stream upstream;
             try
@@ -254,6 +254,17 @@ public sealed class RelayServer : IRelay
                 {
                 }
             }
+        }
+    }
+
+    private void ReportConnection(string message)
+    {
+        try
+        {
+            _gatewayConnected?.Invoke(message);
+        }
+        catch
+        {
         }
     }
 

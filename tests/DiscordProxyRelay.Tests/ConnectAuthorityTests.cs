@@ -52,6 +52,30 @@ public sealed class ConnectAuthorityTests
     }
 
     [Theory]
+    [InlineData("gateway.discord.gg.:443", "gateway.discord.gg", true, false)]
+    [InlineData("c-gru.discord.media.:8443", "c-gru.discord.media", false, true)]
+    public void TryParseNormalizesDnsFqdnBeforeClassification(
+        string input,
+        string expectedHost,
+        bool isGateway,
+        bool isMediaControl)
+    {
+        Assert.True(ConnectAuthority.TryParse(input, out var authority));
+        Assert.Equal(expectedHost, authority.Host);
+        Assert.Equal($"{expectedHost}:{authority.Port}", authority.Value);
+        Assert.Equal(isGateway, authority.IsDiscordGateway);
+        Assert.Equal(isMediaControl, authority.IsDiscordMediaControl);
+    }
+
+    [Fact]
+    public void TryParseLeavesIpv6AuthorityUnchanged()
+    {
+        Assert.True(ConnectAuthority.TryParse("[2001:db8::1]:443", out var authority));
+        Assert.Equal("2001:db8::1", authority.Host);
+        Assert.Equal("[2001:db8::1]:443", authority.Value);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("gateway.discord.gg")]
     [InlineData(":443")]
@@ -67,6 +91,8 @@ public sealed class ConnectAuthorityTests
     [InlineData("https://gateway.discord.gg:443")]
     [InlineData("gateway.discord.gg:abc")]
     [InlineData("gateway.discord.gg:443\r\nInjected: yes")]
+    [InlineData("gateway.discord.gg..:443")]
+    [InlineData(".:443")]
     public void TryParseRejectsUnsafeAuthorities(string input)
     {
         Assert.False(ConnectAuthority.TryParse(input, out _));
