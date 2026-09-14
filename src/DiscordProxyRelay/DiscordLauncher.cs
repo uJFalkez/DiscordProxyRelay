@@ -15,7 +15,6 @@ public static class DiscordLauncher
             RedirectStandardError = !verbose,
         };
         startInfo.ArgumentList.Add($"--proxy-server=http://127.0.0.1:{relayPort}");
-        startInfo.ArgumentList.Add("--proxy-bypass-list=discord.media;*.discord.media");
         return startInfo;
     }
 

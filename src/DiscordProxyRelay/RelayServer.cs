@@ -201,20 +201,25 @@ public sealed class RelayServer : IRelay
             }
 
             var bootstrap = Volatile.Read(ref _mode) == 0;
-            var directRtc = authority.IsDiscordMedia;
-            var persistentGateway = _gatewayProxyConnector is not null && authority.IsDiscordGateway;
-            var tunnelToken = bootstrap && !directRtc && !persistentGateway ? _bootstrap.Token : _lifetime.Token;
+            var directRtc = authority.IsDiscordMedia && !authority.IsDiscordMediaControl;
+            var persistentLocationRoute = _gatewayProxyConnector is not null &&
+                (authority.IsDiscordGateway || authority.IsDiscordMediaControl);
+            var tunnelToken = bootstrap && !directRtc && !persistentLocationRoute ? _bootstrap.Token : _lifetime.Token;
             if (authority.IsDiscordGateway)
             {
-                var proxied = persistentGateway || (bootstrap && !directRtc);
-                _gatewayConnected?.Invoke($"Gateway {(proxied ? "via proxy" : "direto")}: {authority.Host}");
+                var proxied = persistentLocationRoute || (bootstrap && !directRtc);
+                _gatewayConnected?.Invoke($"Gateway {(proxied ? "via proxy" : "direto")}: {authority.Value}");
+            }
+            else if (authority.IsDiscordMediaControl && (persistentLocationRoute || bootstrap))
+            {
+                _gatewayConnected?.Invoke($"Media control via proxy: {authority.Value}");
             }
             Stream upstream;
             try
             {
                 using var connectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(tunnelToken);
                 connectionCancellation.CancelAfter(_connectionTimeout);
-                upstream = persistentGateway
+                upstream = persistentLocationRoute
                     ? await _gatewayProxyConnector!.ConnectAsync(authority.Host, authority.Port, connectionCancellation.Token)
                     : bootstrap && !directRtc
                         ? await _proxyConnector.ConnectAsync(_proxy, authority.Host, authority.Port, connectionCancellation.Token)

@@ -15,6 +15,20 @@ public sealed class ConnectAuthorityTests
     }
 
     [Theory]
+    [InlineData("c-gru08-abc.discord.media", true)]
+    [InlineData("C-EWR14-ABC.DISCORD.MEDIA", true)]
+    [InlineData("c-x.discord.media", true)]
+    [InlineData("discord.media", false)]
+    [InlineData("latency.discord.media", false)]
+    [InlineData("xc-test.discord.media", false)]
+    [InlineData("c-.discord.media.example.com", false)]
+    [InlineData("c-discord.media", false)]
+    public void IsDiscordMediaControlMatchesDynamicControlHosts(string host, bool expected)
+    {
+        Assert.Equal(expected, new ConnectAuthority(host, 443).IsDiscordMediaControl);
+    }
+
+    [Theory]
     [InlineData("gateway.discord.gg:443", "gateway.discord.gg")]
     [InlineData("127.0.0.1:443", "127.0.0.1")]
     [InlineData("[::1]:443", "::1")]

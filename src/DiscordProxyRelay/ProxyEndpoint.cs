@@ -31,6 +31,9 @@ public readonly record struct ConnectAuthority(string Host, int Port)
     public bool IsDiscordMedia =>
         Host.Equals("discord.media", StringComparison.OrdinalIgnoreCase) ||
         Host.EndsWith(".discord.media", StringComparison.OrdinalIgnoreCase);
+    public bool IsDiscordMediaControl =>
+        Host.StartsWith("c-", StringComparison.OrdinalIgnoreCase) &&
+        Host.EndsWith(".discord.media", StringComparison.OrdinalIgnoreCase);
 
     public static bool TryParse(string? value, out ConnectAuthority authority)
     {
