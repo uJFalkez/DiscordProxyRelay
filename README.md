@@ -1,8 +1,7 @@
 # DiscordProxyRelay
 
 > [!IMPORTANT]
-> Não funciona mais!! Estou trabalhando pra implementar uma automação de um novo macete que descobri.
-> Se tiver uma sugestão, me chame no meu discord: `falkezz#5262`
+> A `v2.0.0` é uma pré-release experimental para o Discord atual. Ela mantém no proxy o Gateway e as conexões de controle necessárias para iniciar e assistir livestreams, enquanto o tráfego de mídia continua direto.
 
 [![Última versão](https://img.shields.io/github/v/release/uJFalkez/DiscordProxyRelay?display_name=tag&style=flat-square)](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest)
 [![Plataforma](https://img.shields.io/badge/plataforma-Windows%20x64-0078D4?style=flat-square&logo=windows)](#requisitos)
@@ -57,7 +56,7 @@ Abra `DiscordProxyRelay.exe` e aguarde: o programa busca e testa proxies, seleci
 
 ## Como usar
 
-Basta fechar o Discord e executar `DiscordProxyRelay.exe`. O console mostra o progresso, mas nada é salvo em arquivo. Se falhar, feche o Discord e tente de novo.
+Basta fechar o Discord e executar `DiscordProxyRelay.exe`. O console mostra o progresso, mas nada é salvo em arquivo. Na `v2.0.0`, quem transmite e quem assiste deve iniciar o Discord pelo relay. Se falhar, feche o Discord e tente de novo.
 
 Por padrão, o gateway do Discord permanece no proxy após a inicialização. Para usar o comportamento antigo (desligar o proxy após a inicialização), use `--temporary-gateway`.
 
@@ -74,7 +73,7 @@ Por padrão, o gateway do Discord permanece no proxy após a inicialização. Pa
 
 - Busca proxies públicos da [ProxyScrape](https://proxyscrape.com/) de países aprovados (prioridade `US`/`CA`, depois uma lista secundária).
 - Valida um túnel TLS para `gateway.discord.gg` e abre o Discord por um relay local em `127.0.0.1`.
-- Conexões de voz e vídeo (`discord.media`) nunca passam pelo proxy.
+- Conexões TCP de controle em `c-*.discord.media` passam pelo proxy; o restante de `discord.media`, incluindo o tráfego de mídia, continua direto.
 - Dez segundos após identificar o gateway, o tráfego comum passa a usar a rede direta.
 - Por padrão, o gateway fica no proxy e troca de proxy após duas falhas consecutivas ao conectar; sem substituto, mantém o atual e nunca usa conexão direta. Com `--temporary-gateway`, o gateway também vai para a rota direta após a inicialização.
 
@@ -85,7 +84,7 @@ O relay não descriptografa TLS nem instala certificados. A filtragem geográfic
 | Origem | Bug | Status | Correção |
 | --- | --- | --- | --- |
 | [@light1ngbolt no X](https://x.com/light1ngbolt/status/2089861213387665767) | A feature fica indisponível como se tivesse iniciado no Brasil. | Externo ao relay | Causado pelo plugin `BetterSessions` do Vencord. |
-| Geral | Depois de um tempo, não conecta a uma live de novo. | Mitigado | O gateway persistente (padrão) mantém as reconexões no proxy. |
+| Geral | Depois de um tempo, não conecta a uma live de novo. | Experimental na `v2.0.0` | O Gateway e as conexões de controle de livestream permanecem no proxy. |
 | Casos isolados | Console abre no app Terminal e não fecha sozinho. | Corrigido na `v1.2.1` | O relay se desanexa do console após a inicialização. |
 
 O comportamento depende do Discord atual e pode mudar sem aviso.
