@@ -3,13 +3,13 @@
 > [!IMPORTANT]
 > A `v2.0.0` é uma pré-release experimental para o Discord atual. Ela mantém no proxy o Gateway e as conexões de controle necessárias para iniciar e assistir livestreams, enquanto o tráfego de mídia continua direto.
 
-[![Última versão](https://img.shields.io/github/v/release/uJFalkez/DiscordProxyRelay?display_name=tag&style=flat-square)](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest)
+[![Pré-release v2.0.0](https://img.shields.io/badge/pr%C3%A9--release-v2.0.0-orange?style=flat-square)](https://github.com/uJFalkez/DiscordProxyRelay/releases/tag/v2.0.0)
 [![Plataforma](https://img.shields.io/badge/plataforma-Windows%20x64-0078D4?style=flat-square&logo=windows)](#requisitos)
 [![.NET](https://img.shields.io/badge/.NET-9.0.19-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Licença](https://img.shields.io/github/license/uJFalkez/DiscordProxyRelay?style=flat-square)](LICENSE)
 
 > [!IMPORTANT]
-> O programa usa proxies públicos de terceiros — leia [Privacidade e riscos](#privacidade-e-riscos) antes de usar. Baixe apenas da página oficial de [Releases](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest).
+> O programa usa proxies públicos de terceiros — leia [Privacidade e riscos](#privacidade-e-riscos) antes de usar. Baixe a pré-release apenas da página oficial da [`v2.0.0`](https://github.com/uJFalkez/DiscordProxyRelay/releases/tag/v2.0.0).
 >
 > O Relay é necessário para TODOS que querem assistir ou streamar, não só para o streamer.
 
@@ -26,7 +26,7 @@ Discord PTB, Canary, navegador, macOS e Linux não são compatíveis. O Vencord 
 
 ### 1. Baixe
 
-1. Acesse a [versão mais recente](https://github.com/uJFalkez/DiscordProxyRelay/releases/latest) e expanda **Assets**.
+1. Acesse a [pré-release `v2.0.0`](https://github.com/uJFalkez/DiscordProxyRelay/releases/tag/v2.0.0) e expanda **Assets**.
 2. Baixe `DiscordProxyRelay.exe` (e, opcionalmente, `SHA256SUMS.txt`).
 3. Coloque os arquivos na mesma pasta.
 
