@@ -119,6 +119,44 @@ public sealed class RelayServerTests
     }
 
     [Fact]
+    public async Task DiscordMediaUsesDirectConnectorDuringBootstrapAndSurvivesHardSwitch()
+    {
+        await using var target = new TcpTestServer(async stream =>
+        {
+            var buffer = new byte[32];
+            while (true)
+            {
+                var read = await stream.ReadAsync(buffer);
+                if (read == 0) return;
+                await stream.WriteAsync(buffer.AsMemory(0, read));
+            }
+        }, repeat: true);
+        var bootstrap = new LocalConnector(target.Port);
+        var directCalls = 0;
+        async Task<Stream> Direct(string host, int port, CancellationToken cancellationToken)
+        {
+            Assert.Equal("video.discord.media", host);
+            Assert.Equal(443, port);
+            Interlocked.Increment(ref directCalls);
+            var client = new TcpClient();
+            await client.ConnectAsync(IPAddress.Loopback, target.Port, cancellationToken);
+            return client.GetStream();
+        }
+        await using var relay = await RelayServer.StartAsync(
+            new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US"), bootstrap, Direct, CancellationToken.None);
+        using var client = await ConnectThroughRelayAsync(relay.Port, "video.discord.media:443");
+        await client.GetStream().WriteAsync("before"u8.ToArray());
+        Assert.Equal("before", await ReadTextAsync(client.GetStream(), 6));
+
+        await relay.SwitchToDirectAsync();
+
+        await client.GetStream().WriteAsync("after"u8.ToArray());
+        Assert.Equal("after", await ReadTextAsync(client.GetStream(), 5));
+        Assert.Equal(1, directCalls);
+        Assert.Empty(bootstrap.Calls);
+    }
+
+    [Fact]
     public async Task PersistentGatewayAndMediaControlStayProxiedWhileOrdinaryMediaStaysDirect()
     {
         static async Task EchoAsync(Stream stream)
@@ -186,6 +224,56 @@ public sealed class RelayServerTests
     }
 
     [Fact]
+    public async Task PersistentGatewayStaysProxiedWhileOrdinaryTrafficSwitchesToDirect()
+    {
+        static async Task EchoAsync(Stream stream)
+        {
+            var buffer = new byte[32];
+            while (true)
+            {
+                var read = await stream.ReadAsync(buffer);
+                if (read == 0) return;
+                await stream.WriteAsync(buffer.AsMemory(0, read));
+            }
+        }
+        await using var bootstrapTarget = new TcpTestServer(EchoAsync, repeat: true);
+        await using var gatewayTarget = new TcpTestServer(EchoAsync, repeat: true);
+        await using var directTarget = new TcpTestServer(EchoAsync, repeat: true);
+        var bootstrap = new LocalConnector(bootstrapTarget.Port);
+        var gateway = new GatewayConnector(gatewayTarget.Port);
+        var directCalls = new ConcurrentBag<string>();
+        async Task<Stream> Direct(string host, int port, CancellationToken cancellationToken)
+        {
+            directCalls.Add(host);
+            var client = new TcpClient();
+            await client.ConnectAsync(IPAddress.Loopback, directTarget.Port, cancellationToken);
+            return client.GetStream();
+        }
+        await using var relay = await RelayServer.StartAsync(
+            new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US"),
+            bootstrap,
+            Direct,
+            gatewayProxyConnectorFactory: _ => gateway,
+            cancellationToken: CancellationToken.None);
+        using var gatewayBeforeSwitch = await ConnectThroughRelayAsync(relay.Port, "gateway.discord.gg:443");
+        using var ordinaryBeforeSwitch = await ConnectThroughRelayAsync(relay.Port, "cdn.discordapp.com:443");
+
+        await relay.SwitchToDirectAsync();
+
+        await gatewayBeforeSwitch.GetStream().WriteAsync("alive"u8.ToArray());
+        Assert.Equal("alive", await ReadTextAsync(gatewayBeforeSwitch.GetStream(), 5));
+        gatewayBeforeSwitch.Dispose();
+        Assert.Equal(0, await ordinaryBeforeSwitch.GetStream().ReadAsync(new byte[1]).AsTask().WaitAsync(TimeSpan.FromSeconds(2)));
+        ordinaryBeforeSwitch.Dispose();
+        using var ordinaryAfterSwitch = await ConnectThroughRelayAsync(relay.Port, "cdn.discordapp.com:443");
+        await ordinaryAfterSwitch.GetStream().WriteAsync("direct"u8.ToArray());
+        Assert.Equal("direct", await ReadTextAsync(ordinaryAfterSwitch.GetStream(), 6));
+        Assert.Equal([new ConnectAuthority("gateway.discord.gg", 443)], gateway.Calls);
+        Assert.Single(bootstrap.Calls);
+        Assert.Equal(["cdn.discordapp.com"], directCalls);
+    }
+
+    [Fact]
     public async Task PersistentMediaControlFailureReturnsBadGatewayWithoutDirectFallback()
     {
         var gateway = new FailingGatewayConnector();
@@ -204,6 +292,33 @@ public sealed class RelayServerTests
         using var client = new TcpClient();
         await client.ConnectAsync(IPAddress.Loopback, relay.Port);
         await client.GetStream().WriteAsync("CONNECT c-gru.discord.media:8443 HTTP/1.1\r\n\r\n"u8.ToArray());
+
+        var response = await TcpTestServer.ReadHeadersAsync(client.GetStream()).WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.StartsWith("HTTP/1.1 502", response);
+        Assert.Equal(1, gateway.Calls);
+        Assert.Equal(0, Volatile.Read(ref directCalls));
+    }
+
+    [Fact]
+    public async Task PersistentGatewayFailureReturnsBadGatewayWithoutDirectFallback()
+    {
+        var gateway = new FailingGatewayConnector();
+        var directCalls = 0;
+        await using var relay = await RelayServer.StartAsync(
+            new ProxyEndpoint("proxy.test", 8080, ProxyKind.Http, "US"),
+            new LocalConnector(1),
+            (_, _, _) =>
+            {
+                Interlocked.Increment(ref directCalls);
+                return Task.FromResult<Stream>(new MemoryStream());
+            },
+            gatewayProxyConnectorFactory: _ => gateway,
+            cancellationToken: CancellationToken.None);
+        await relay.SwitchToDirectAsync();
+        using var client = new TcpClient();
+        await client.ConnectAsync(IPAddress.Loopback, relay.Port);
+        await client.GetStream().WriteAsync("CONNECT gateway.discord.gg:443 HTTP/1.1\r\n\r\n"u8.ToArray());
 
         var response = await TcpTestServer.ReadHeadersAsync(client.GetStream()).WaitAsync(TimeSpan.FromSeconds(2));
 
